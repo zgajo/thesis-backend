@@ -1,0 +1,69 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.json"
+    // "tsconfigRootDir": "./"
+  },
+  "plugins": ["@typescript-eslint", "import"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended",
+    "airbnb-typescript/base"
+  ],
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "paths": ["."],
+        "extensions": [".js", ".jsx", ".ts", ".tsx", ".json"],
+        "moduleDirectory": ["node_modules"]
+      },
+      "typescript": {}
+    }
+  },
+  "rules": {
+    "no-console": "error",
+    "import/no-named-as-default": 0,
+    "camelcase": "off",
+    "import/no-extraneous-dependencies": "off",
+    "import/prefer-default-export": "off",
+    "no-unused-vars": "off",
+    "object-curly-newline": "off",
+    "import/no-cycle": "off",
+    "@typescript-eslint/no-unused-vars": "error",
+    // note you must disable the base rule as it can report incorrect errors
+    "dot-notation": "off",
+    "@typescript-eslint/dot-notation": "off",
+    "max-len": 130,
+    "prettier/prettier": [
+      "error",
+      {
+        "singleQuote": false,
+        "parser": "typescript",
+        "printWidth": 150,
+        "tabWidth": 2,
+        "useTabs": false,
+        "semi": true,
+        "trailingComma": "all",
+        "bracketSpacing": true,
+        "jsxBracketSameLine": true,
+        "arrowParens": "avoid",
+        "proseWrap": "preserve"
+      },
+      {
+        "usePrettierrc": false
+      }
+    ],
+    "import/extensions": "off",
+    "@typescript-eslint/quotes": "off",
+    // need to use this for the /opt/nodejs lambda layer
+    "import/no-absolute-path": "off",
+    "arrow-parens": "off",
+    "max-len": ["error", { "code": 120 }],
+    "implicit-arrow-linebreak": "off",
+    "operator-linebreak": "off",
+    "function-paren-newline": "off"
+  }
+}
