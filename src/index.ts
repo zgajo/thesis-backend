@@ -1,10 +1,6 @@
 import { parse } from "osm-read";
 import * as path from "path";
-import BTree from "sorted-btree"
-import { Way } from "./trees/Way";
-import { Node } from "./trees/Node";
 import { ParsedNode } from "./types/osm-read";
-// import BTree from "./trees/Btree";
 
 import { COUNTRY } from "./utils/constants";
 import { Parser } from "./services/parser";
