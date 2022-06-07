@@ -1874,6 +1874,11 @@ signal-exit@^3.0.2:
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.7.tgz#a9a1767f8af84155114eaabd73f99273c8f59ad9"
   integrity sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==
 
+sorted-btree@^1.8.0:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/sorted-btree/-/sorted-btree-1.8.0.tgz#3fe8ceeb3882b6cdbe27f66fa9640aac91459dd6"
+  integrity sha512-AbLHqsE2CStFKk3e6T7jf0ZRg1GXb9km6urm8jFO2XDbC1KXV6pM8s91vz2VzFA241Pmz6p3OG5LP1p9hmpJ/A==
+
 string-width@^4.0.0, string-width@^4.1.0, string-width@^4.2.2:
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
