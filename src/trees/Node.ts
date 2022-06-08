@@ -1,10 +1,12 @@
+import { greatCircleVec } from "../utils/distance";
 import { Way } from "./Way";
 
 export class Node {
   id: string;
   lon: number;
   lat: number;
-  pointsTo: Node[] | string[];
+  pointsToNode: Node[];
+  pointsTo: string[];
   highway: string[];
   distance: number[];
   edgeSpeed: number[];
@@ -21,7 +23,8 @@ export class Node {
     tags?: { [key: string]: any };
     partOfWays?: Way[];
     linkCount?: number;
-    pointsTo?: Node[] | string[];
+    pointsToNode?: Node[];
+    pointsTo?: string[];
     highway?: string[];
     distance?: number[];
     edgeSpeed?: number[];
@@ -30,6 +33,7 @@ export class Node {
     this.id = node.id;
     this.lon = node.lon;
     this.lat = node.lat;
+    this.pointsToNode = node.pointsToNode || [];
     this.pointsTo = node.pointsTo || [];
     this.distance = node.distance || [];
     this.edgeSpeed = node.edgeSpeed || [];
@@ -46,9 +50,17 @@ export class Node {
     return 0;
   }
 
-  connectToNode(node: Node) {
-    (this.pointsTo as Node[]).push(node);
-    this.distance.push(0);
+  connectToNode(node: Node, oneWay: boolean = false) {
+    const distance: number = greatCircleVec(this.lat, this.lon, node.lat, node.lon);
+
+    this.pointsToNode.push(node);
+    this.pointsTo.push(node.id);
+    this.distance.push(distance);
+    if(!oneWay){
+      node.pointsToNode.push(this);
+      node.pointsTo.push(this.id);
+      node.distance.push(distance);
+    }
   }
 
   addWay(way: Way) {

@@ -1,4 +1,5 @@
 export const COUNTRY = "andorra";
+export const KM_TO_METERS = 1000;
 
 export const onewayValues = {
   yes: true,
@@ -11,3 +12,4 @@ export const onewayValues = {
 };
 
 export const reversedValues = { "-1": true, reverse: true, T: true };
+

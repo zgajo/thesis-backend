@@ -6,6 +6,7 @@ export class Way {
   nodeRefs: string[];
   nodes: Node[];
   streetLength?: number;
+  line: [number, number][];
 
   constructor(way: {
     id: string;
@@ -16,6 +17,7 @@ export class Way {
     this.tags = way.tags;
     this.nodeRefs = way.nodeRefs;
     this.nodes = [];
+    this.line = []
   }
 
   addNode(node: Node) {
@@ -29,5 +31,8 @@ export class Way {
 
   setStreetLength(length: number){
     this.streetLength = length
+  }
+  addLine(line: [number, number][]){
+    this.line = line
   }
 }

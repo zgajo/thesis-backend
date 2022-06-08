@@ -26,30 +26,42 @@ export class Parser {
 
     const newWay = new Way(way);
 
+    let previousNode: Node | undefined;
+    let wayLine: [number, number][] = []
+
     newWay.nodeRefs.forEach((element: string) => {
       const wayNode = this.wayNodes.get(element);
 
       if (wayNode) {
         wayNode.increaseLinkCount();
-        wayNode.partOfWays.push(newWay);
+        if(previousNode){
+          previousNode.connectToNode(wayNode, isOneWay)
+        }
+        wayNode.addWay(newWay);
         newWay.addNode(wayNode);
+        
+        wayLine.push([wayNode.lat, wayNode.lon])
+        previousNode = wayNode
         return;
       }
 
       const storedNode = this.nodes.get(element);
 
-      const newNode = new Node({
-        ...storedNode,
-      });
+      if(previousNode){
+        previousNode.connectToNode(storedNode, isOneWay)
+      }
+      storedNode.addWay(newWay);
+      newWay.addNode(storedNode);
+      this.wayNodes.set(element, storedNode);
 
-      newNode.addWay(newWay);
-      newWay.addNode(newNode);
-      this.wayNodes.set(element, newNode);
+      wayLine.push([storedNode.lon, storedNode.lat])
+      previousNode = storedNode
     });
-    
+
+    newWay.addLine(wayLine)
     this.ways.set(way.id, newWay);
   }
-  _handleWayNodes(way: Way){
-    return 
+  _handleWayNodes(way: Way) {
+    return;
   }
 }
