@@ -6,7 +6,8 @@ import { COUNTRY } from "./utils/constants";
 import { Parser } from "./services/parser";
 
 const parserService = new Parser()
-
+console.time("nodesImport")
+let timerOn = true
 parse({
   filePath: path.join(__dirname, `${COUNTRY}-latest.osm.pbf`),
   endDocument: function () {
@@ -14,7 +15,12 @@ parse({
   },
   bounds: function (bounds: any) {},
   node: function(node: ParsedNode){parserService.handleNode(node)},
-  way: function(way: any){ parserService.handleWay(way) },
+  way: function(way: any){ 
+    if(timerOn){
+      console.timeEnd("nodesImport");
+      timerOn = false
+    }
+  parserService.handleWay(way) },
   relation: function (relation: any) {
   },
   error: function (msg: string) {
