@@ -35,11 +35,11 @@ export class Parser {
       if (wayNode) {
         wayNode.increaseLinkCount();
         if(previousNode){
-          previousNode.connectToNode(wayNode, isOneWay)
+          previousNode.connectToNode(wayNode, way.tags?.highway, isOneWay)
         }
         wayNode.addWay(newWay);
         newWay.addNode(wayNode);
-        
+
         wayLine.push([wayNode.lat, wayNode.lon])
         previousNode = wayNode
         return;
@@ -48,7 +48,7 @@ export class Parser {
       const storedNode = this.nodes.get(element);
 
       if(previousNode){
-        previousNode.connectToNode(storedNode, isOneWay)
+        previousNode.connectToNode(storedNode, way.tags?.highway, isOneWay)
       }
       storedNode.addWay(newWay);
       newWay.addNode(storedNode);

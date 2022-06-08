@@ -11,7 +11,10 @@ let timerOn = true
 parse({
   filePath: path.join(__dirname, `${COUNTRY}-latest.osm.pbf`),
   endDocument: function () {
-    const a = parserService.wayNodes.get("5167171643")
+    // simplify graph
+    // set speed for each node connection
+    // set travel time between nodes
+    const a = parserService.wayNodes.get("535387288")
     console.log("first")
   },
   bounds: function (bounds: any) {},
