@@ -13,6 +13,14 @@
       "sourceMaps": true,
       "cwd": "${workspaceRoot}",
       "protocol": "inspector"
+    },
+
+    {
+      "type": "node-terminal",
+      "name": "Current TS File - nodemon",
+      "request": "launch",
+      "command": "npx nodemon --exec \"ts-node ${relativeFile}\"",
+      "cwd": "${workspaceFolder}"
     }
   ]
 }
