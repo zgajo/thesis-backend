@@ -96,30 +96,30 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
         const wayNode = this.nodes.highway.get(element);
 
         if (wayNode) {
-          // NodeHelper.increaseLinkCount(wayNode);
-          // if (previousNode) {
-          //   NodeHelper.connectNodes(previousNode, wayNode, way.tags?.highway, isOneWay);
-          // }
-          // NodeHelper.addWay(wayNode, way);
-          // WayHelper.addNode(way, wayNode);
+          NodeHelper.increaseLinkCount(wayNode);
+          if (previousNode) {
+            NodeHelper.connectNodes(previousNode, wayNode, way.tags?.highway, isOneWay);
+          }
+          NodeHelper.addWay(wayNode, way);
+          WayHelper.addNode(way, wayNode);
 
-          // wayLine.push([wayNode.lat, wayNode.lon]);
-          // previousNode = wayNode;
+          wayLine.push([wayNode.lat, wayNode.lon]);
+          previousNode = wayNode;
           return;
         }
 
         const storedNode = this.nodes.all.get(element);
 
         if (storedNode) {
-          // if (previousNode) {
-          //   NodeHelper.connectNodes(previousNode, storedNode, way.tags?.highway, isOneWay);
-          // }
-          // NodeHelper.addWay(storedNode, way);
-          // WayHelper.addNode(way, storedNode);
+          if (previousNode) {
+            NodeHelper.connectNodes(previousNode, storedNode, way.tags?.highway, isOneWay);
+          }
+          NodeHelper.addWay(storedNode, way);
+          WayHelper.addNode(way, storedNode);
           this.nodes.highway.set(element, storedNode);
 
-          // wayLine.push([storedNode.lon, storedNode.lat]);
-          // previousNode = storedNode;
+          wayLine.push([storedNode.lon, storedNode.lat]);
+          previousNode = storedNode;
         }
       });
 
