@@ -1,4 +1,4 @@
-export const COUNTRY = "croatia";
+export const COUNTRY = "andorra";
 export const KM_TO_METERS = 1000;
 
 export const onewayValues = {

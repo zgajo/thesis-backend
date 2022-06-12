@@ -1,5 +1,5 @@
 import polylabel from "polylabel";
-import BTree from "sorted-btree";
+import BTree from "../trees/Btree/Btree";
 import { IGlobalParserData, IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { greatCircleVec } from "../utils/distance";
@@ -170,7 +170,6 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 function NodeParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
   return class NodeParser extends Base {
     handleNode(node: any) {
-      // map.set(node)
       this.nodes.all.set(node.id, node);
 
       switch (true) {
@@ -224,16 +223,7 @@ class NodeHelper {
       next.pointsToNode 
         ? next.pointsToNode.push(nextPointsToNode) 
         : (next.pointsToNode = [nextPointsToNode]);
-      // next.pointsToNode ? next.pointsToNode.push(previous) : (next.pointsToNode = [previous]);
-      // next.pointsToNodeId ? next.pointsToNodeId.push(previous.id) : (next.pointsToNodeId = [previous.id]);
-      // next.distance ? next.distance.push(distance) : (next.distance = [distance]);
-      // next.highway ? next.highway.push(highway) : (next.highway = [highway]);
     }
-  }
-
-  static addWay(node: IOsmNode, way: IOsmWay) {
-    // node.partOfWayId ? node.partOfWayId.push(way.id) : (node.partOfWayId = [way.id]);
-    // node.partOfWays ? node.partOfWays.push(way) : (node.partOfWays = [way]);
   }
 }
 

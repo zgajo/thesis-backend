@@ -1,4 +1,4 @@
-import BTree from "sorted-btree";
+import BTree from "../trees/Btree/Btree";
 import { SuperMap } from "../services/parser";
 import { IOsmNode, IOsmWay } from "./osm-read";
 

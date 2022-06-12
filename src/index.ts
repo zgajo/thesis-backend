@@ -8,26 +8,6 @@ import { IOsmNode } from "./types/osm-read";
 const parserService = new Parser()
 console.time("nodesImport")
 
-class SuperMap {
-	maps: Array<Map<string, IOsmNode>>
-
-	constructor() {
-		this.maps = [new Map()]
-	}
-
-	set(node: IOsmNode) {
-		if (this.maps[this.maps.length-1].size === 16777000) this.maps.push(new Map())
-		return this.maps[this.maps.length-1].set(node.id, node)
-	}
-
-	get(v: string) {
-		for (const map of this.maps) {
-			if (map.get(v)) return true
-		}
-		return false;
-	}
-}
-
 parse({
   filePath: path.join(__dirname, `${COUNTRY}-latest.osm.pbf`),
   endDocument: function () {
