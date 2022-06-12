@@ -1,16 +1,37 @@
 import { parse } from "osm-read";
 import * as path from "path";
-import { ParsedNode } from "./types/osm-read";
 
 import { COUNTRY } from "./utils/constants";
 import { Parser } from "./services/parser";
+import { IOsmNode } from "./types/osm-read";
 
 const parserService = new Parser()
 console.time("nodesImport")
-let timerOn = true
+
+class SuperMap {
+	maps: Array<Map<string, IOsmNode>>
+
+	constructor() {
+		this.maps = [new Map()]
+	}
+
+	set(node: IOsmNode) {
+		if (this.maps[this.maps.length-1].size === 16777000) this.maps.push(new Map())
+		return this.maps[this.maps.length-1].set(node.id, node)
+	}
+
+	get(v: string) {
+		for (const map of this.maps) {
+			if (map.get(v)) return true
+		}
+		return false;
+	}
+}
+
 parse({
   filePath: path.join(__dirname, `${COUNTRY}-latest.osm.pbf`),
   endDocument: function () {
+    console.timeEnd("nodesImport");
     // simplify graph
     // set speed for each node connection
     // set travel time between nodes
@@ -41,18 +62,16 @@ parse({
     console.log("********************");
   },
   bounds: function (bounds: any) {},
-  node: function(node: ParsedNode){parserService.handleNode(node)},
-  way: function(way: any){ 
-    if(timerOn){
-      console.timeEnd("nodesImport");
-      timerOn = false
-    }
+  node: function(node: IOsmNode){
+    parserService.handleNode(node)
+  },
+  way: function(way: any){
     parserService.handleWay(way) 
   },
-  // relation: function (relation: any) {
-  //   relation.nodeRefs = relation.members.map((member: { ref: any; }) => member.ref)
-  //   parserService.handleWay(relation)
-  // },
+  relation: function (relation: any) {
+    // relation.nodeRefs = relation.members.map((member: { ref: any; }) => member.ref)
+    // parserService.handleWay(relation)
+  },
   error: function (msg: string) {
     console.log("error: " + msg);
   },

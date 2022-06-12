@@ -1,7 +1,7 @@
-import { Way } from "../trees/Way";
+import { IOsmWay } from "../types/osm-read";
 import { onewayValues, reversedValues } from "./constants";
 
-export const _isPathOneWay = (path: Way, bidirectional?: boolean) => {
+export const _isPathOneWay = (path: IOsmWay, bidirectional?: boolean) => {
   if (bidirectional) {
     // # if this is a bi-directional network type, then nothing in it is
     // # considered one-way. eg, if this is a walking network, this may very
@@ -10,11 +10,11 @@ export const _isPathOneWay = (path: Way, bidirectional?: boolean) => {
     // # a one-way street). so we will add this path (in both directions) to
     // # the graph and set its oneway attribute to False.
     return false;
-  } else if ("oneway" in path.tags && path.tags["oneway"] && String(path.tags["oneway"]) in onewayValues) {
+  } else if (path.tags?.oneway && String(path.tags["oneway"]) in onewayValues) {
     // # if this path is tagged as one-way and if it is not a bi-directional
     // # network type then we'll add the path in one direction only
     return true;
-  } else if ("junction" in path.tags && path.tags["junction"] == "roundabout") {
+  } else if (path.tags?.junction && path.tags["junction"] == "roundabout") {
     // # roundabouts are also one-way but are not explicitly tagged as such
     return true;
   } else {
@@ -23,8 +23,8 @@ export const _isPathOneWay = (path: Way, bidirectional?: boolean) => {
   }
 };
 
-export const _isPathReversed = (path: Way) => {
-  if ("oneway" in path && path.tags["oneway"] && String(path.tags["oneway"]) in reversedValues) {
+export const _isPathReversed = (path: IOsmWay) => {
+  if (path.tags?.oneway && String(path.tags["oneway"]) in reversedValues) {
     return true;
   } else {
     return false;
