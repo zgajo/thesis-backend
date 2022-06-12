@@ -3,8 +3,8 @@ import { SuperMap } from "../services/parser";
 import { IOsmNode, IOsmWay } from "./osm-read";
 
 export interface IOsmParsed {
-  nodes: IGlobalParserDataNode;
-  ways: IGlobalParserData<IOsmWay>;
+  nodes: IGlobalParserData<SuperMap, IOsmNode>;
+  ways: IGlobalParserData<BTree, IOsmWay>;
   tourism: BTree<string, IOsmNode | IOsmWay>;
   historic:  BTree<string, IOsmNode | IOsmWay>;
   waterway:  BTree<string, IOsmNode | IOsmWay>;
@@ -12,12 +12,7 @@ export interface IOsmParsed {
   sport:  BTree<string, IOsmNode | IOsmWay>;
 }
 
-export interface IGlobalParserData<T>{
-  all: BTree<string, T>;
-  highway: BTree<string, T>;
-}
-
-export interface IGlobalParserDataNode{
-  all: SuperMap;
-  highway: SuperMap;
+export interface IGlobalParserData<T, U>{
+  all: T extends BTree ? BTree<string, U> : SuperMap<U>;
+  highway: T extends BTree ? BTree<string, U> : SuperMap<U>;
 }

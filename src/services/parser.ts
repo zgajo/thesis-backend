@@ -1,20 +1,19 @@
 import polylabel from "polylabel";
 import BTree from "sorted-btree";
-import { IGlobalParserData, IGlobalParserDataNode, IOsmParsed } from "../types/osm-parser";
+import { IGlobalParserData, IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { greatCircleVec } from "../utils/distance";
 
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
 
-
-export class SuperMap {
-  maps: Array<Map<string, IOsmNode>>;
+export class SuperMap<T = any> {
+  maps: Array<Map<string, T>>;
 
   constructor() {
     this.maps = [new Map()];
   }
 
-  set(id: string, node: IOsmNode) {
+  set(id: string, node: T) {
     if (this.maps[this.maps.length - 1].size === 16777000) this.maps.push(new Map());
     return this.maps[this.maps.length - 1].set(id, node);
   }
@@ -37,11 +36,11 @@ export class SuperMap {
   }
 }
 
-const globalWays: IGlobalParserData<IOsmWay> = {
+const globalWays: IGlobalParserData<BTree, IOsmWay> = {
   all: new BTree(),
   highway: new BTree(),
 };
-const globalNodes: IGlobalParserDataNode = {
+const globalNodes: IGlobalParserData<SuperMap, IOsmNode> = {
   all: new SuperMap(),
   highway: new SuperMap(),
 };
@@ -90,12 +89,12 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       }
 
       let previousNode: IOsmNode | undefined;
-      let wayLine: [number, number][] = [];
-      const nodeRefsLength = way.nodeRefs.length
-      let line = ""
+      // let wayLine: [number, number][] = [];
+      // const nodeRefsLength = way.nodeRefs.length
+      // let line = ""
       way.nodeRefs.forEach((element: string, index) => {
         const highwayNode = this.nodes.highway.get(element);
-
+        
         if (highwayNode) {
           NodeHelper.increaseLinkCount(highwayNode);
           if (previousNode) {
@@ -134,7 +133,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
         }
       });
 
-      way.geometry = `LINESTRING (${line})`;
+      // way.geometry = `LINESTRING (${line})`;
 
       this.ways.highway.set(way.id, way);
       return way;
