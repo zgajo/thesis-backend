@@ -1,7 +1,7 @@
 import polylabel from "polylabel";
 import BTree from "sorted-btree";
 import { IGlobalParserData, IGlobalParserDataNode, IOsmParsed } from "../types/osm-parser";
-import { IOsmNode, IOsmWay } from "../types/osm-read";
+import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { greatCircleVec } from "../utils/distance";
 
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
@@ -91,39 +91,50 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
       let previousNode: IOsmNode | undefined;
       let wayLine: [number, number][] = [];
+      const nodeRefsLength = way.nodeRefs.length
+      let line = ""
+      way.nodeRefs.forEach((element: string, index) => {
+        const highwayNode = this.nodes.highway.get(element);
 
-      way.nodeRefs.forEach((element: string) => {
-        const wayNode = this.nodes.highway.get(element);
-
-        if (wayNode) {
-          NodeHelper.increaseLinkCount(wayNode);
+        if (highwayNode) {
+          NodeHelper.increaseLinkCount(highwayNode);
           if (previousNode) {
-            NodeHelper.connectNodes(previousNode, wayNode, way.tags?.highway, isOneWay);
+            NodeHelper.connectNodes(previousNode, highwayNode, way.tags?.highway, isOneWay, way);
           }
-          NodeHelper.addWay(wayNode, way);
-          WayHelper.addNode(way, wayNode);
+          // NodeHelper.addWay(highwayNode, way);
+          // WayHelper.addNode(way, highwayNode);
 
-          wayLine.push([wayNode.lat, wayNode.lon]);
-          previousNode = wayNode;
+          // line += `${highwayNode.lon}, ${highwayNode.lat}`
+          // if (index !== nodeRefsLength - 1) {
+          //   line += ", ";
+          // }
+
+          // wayLine.push([highwayNode.lat, highwayNode.lon]);
+          previousNode = highwayNode;
           return;
         }
 
-        const storedNode = this.nodes.all.get(element);
+        const node = this.nodes.all.get(element);
 
-        if (storedNode) {
+        if (node) {
           if (previousNode) {
-            NodeHelper.connectNodes(previousNode, storedNode, way.tags?.highway, isOneWay);
+            NodeHelper.connectNodes(previousNode, node, way.tags?.highway, isOneWay, way);
           }
-          NodeHelper.addWay(storedNode, way);
-          WayHelper.addNode(way, storedNode);
-          this.nodes.highway.set(element, storedNode);
+          // NodeHelper.addWay(node, way);
+          // WayHelper.addNode(way, node);
+          this.nodes.highway.set(element, node);
 
-          wayLine.push([storedNode.lon, storedNode.lat]);
-          previousNode = storedNode;
+          // line += `${node.lon}, ${node.lat}`
+          // if (index !== nodeRefsLength - 1) {
+          //   line += ", ";
+          // }
+
+          // wayLine.push([node.lon, node.lat]);
+          previousNode = node;
         }
       });
 
-      way.line = wayLine;
+      way.geometry = `LINESTRING (${line})`;
 
       this.ways.highway.set(way.id, way);
       return way;
@@ -189,23 +200,41 @@ class NodeHelper {
     node.street_count += 1;
   }
 
-  static connectNodes(previous: IOsmNode, next: IOsmNode, highway: string = "", oneWay: boolean = false) {
+  static connectNodes(previous: IOsmNode, next: IOsmNode, highway: string = "", oneWay: boolean = false, way: IOsmWay) {
     const distance: number = greatCircleVec(previous.lat, previous.lon, next.lat, next.lon);
 
-    previous.pointsToNode ? previous.pointsToNode.push(next) : (previous.pointsToNode = [next]);
-    previous.pointsToNodeId ? previous.pointsToNodeId.push(next.id) : (previous.pointsToNodeId = [next.id]);
-    previous.distance ? previous.distance.push(distance) : (previous.distance = [distance]);
-    previous.highway ? previous.highway.push(highway) : (previous.highway = [highway]);
+    const previousPointsToNode: TPointsToNode = [
+      next.id,
+      next, 
+      highway, 
+      distance,
+      way
+    ]
+
+    previous.pointsToNode 
+      ? previous.pointsToNode.push(previousPointsToNode) 
+      : (previous.pointsToNode = [previousPointsToNode]);
     if (!oneWay) {
-      next.pointsToNode ? next.pointsToNode.push(previous) : (next.pointsToNode = [previous]);
-      next.pointsToNodeId ? next.pointsToNodeId.push(previous.id) : (next.pointsToNodeId = [previous.id]);
-      next.distance ? next.distance.push(distance) : (next.distance = [distance]);
-      next.highway ? next.highway.push(highway) : (next.highway = [highway]);
+      const nextPointsToNode: TPointsToNode = [
+        next.id,
+        next, 
+        highway, 
+        distance,
+        way
+      ]
+      next.pointsToNode 
+        ? next.pointsToNode.push(nextPointsToNode) 
+        : (next.pointsToNode = [nextPointsToNode]);
+      // next.pointsToNode ? next.pointsToNode.push(previous) : (next.pointsToNode = [previous]);
+      // next.pointsToNodeId ? next.pointsToNodeId.push(previous.id) : (next.pointsToNodeId = [previous.id]);
+      // next.distance ? next.distance.push(distance) : (next.distance = [distance]);
+      // next.highway ? next.highway.push(highway) : (next.highway = [highway]);
     }
   }
 
   static addWay(node: IOsmNode, way: IOsmWay) {
-    node.partOfWays ? node.partOfWays.push(way) : (node.partOfWays = [way]);
+    // node.partOfWayId ? node.partOfWayId.push(way.id) : (node.partOfWayId = [way.id]);
+    // node.partOfWays ? node.partOfWays.push(way) : (node.partOfWays = [way]);
   }
 }
 

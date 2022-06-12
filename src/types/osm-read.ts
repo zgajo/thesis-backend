@@ -9,18 +9,26 @@ interface BaseElement {
   user?: string;
   tags?: { [key: string]: string };
 }
-
+type TPointsToNodeId = string; 
+type TPointsToNodeObject = IOsmNode; 
+type TPointsToNodeHighway = string; 
+type TPointsToNodeDistance = number; 
+export type TPointsToNode = [
+  TPointsToNodeId, 
+  TPointsToNodeObject,
+  TPointsToNodeHighway,
+  TPointsToNodeDistance,
+  IOsmWay
+]
 export interface IOsmNode extends BaseElement {
   type: 'node';
   lat: number;
   lon: number;
   linkCount?: number;
   street_count?: number;
-  pointsToNode?: IOsmNode[];
-  pointsToNodeId?: string[];
-  highway?: string[];
-  distance?: number[];
+  pointsToNode?: TPointsToNode[];
   partOfWays?: IOsmWay[];
+  partOfWayId?: string[];
 }
 
 export interface IOsmWay extends BaseElement {
@@ -29,6 +37,7 @@ export interface IOsmWay extends BaseElement {
   nodes?: IOsmNode[];
   streetLength?: number;
   line?: [number, number][];
+  geometry?: string;
   lat?: number;
   lon?: number;
 }
