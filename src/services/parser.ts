@@ -1,49 +1,9 @@
-import polylabel from "polylabel";
-import BTree from "../trees/Btree/Btree";
-import { IGlobalParserData, IOsmParsed } from "../types/osm-parser";
-import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
-import { greatCircleVec } from "../utils/distance";
-
+import { IOsmParsed } from "../types/osm-parser";
+import { IOsmNode, IOsmWay } from "../types/osm-read";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
+import { NodeHelper, WayHelper } from "./parser-helper";
+import { ParserStorage } from "./parser-storage";
 
-export class SuperMap<T = any> {
-  maps: Array<Map<string, T>>;
-
-  constructor() {
-    this.maps = [new Map()];
-  }
-
-  set(id: string, node: T) {
-    if (this.maps[this.maps.length - 1].size === 16777000) this.maps.push(new Map());
-    return this.maps[this.maps.length - 1].set(id, node);
-  }
-
-  get(v: string) {
-    let element = null
-    for (const map of this.maps) {
-      element = map.get(v)
-      if (element) return element;
-    }
-    return element;
-  }
-
-  get size(){
-    let size = 0
-    for (const map of this.maps) {
-      size += map.size
-    }
-    return size
-  }
-}
-
-const globalWays: IGlobalParserData<BTree, IOsmWay> = {
-  all: new BTree(),
-  highway: new BTree(),
-};
-const globalNodes: IGlobalParserData<SuperMap, IOsmNode> = {
-  all: new SuperMap(),
-  highway: new SuperMap(),
-};
 
 function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
   return class WayParser extends Base {
@@ -190,78 +150,6 @@ function NodeParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBas
   };
 }
 
-class NodeHelper {
-  static increaseLinkCount(node: IOsmNode) {
-    if (!node.linkCount) node.linkCount = 0;
-    if (!node.street_count) node.street_count = 0;
-    node.linkCount += 1;
-    node.street_count += 1;
-  }
-
-  static connectNodes(previous: IOsmNode, next: IOsmNode, highway: string = "", oneWay: boolean = false, way: IOsmWay) {
-    const distance: number = greatCircleVec(previous.lat, previous.lon, next.lat, next.lon);
-
-    const previousPointsToNode: TPointsToNode = [
-      next.id,
-      next, 
-      highway, 
-      distance,
-      way
-    ]
-
-    previous.pointsToNode 
-      ? previous.pointsToNode.push(previousPointsToNode) 
-      : (previous.pointsToNode = [previousPointsToNode]);
-    if (!oneWay) {
-      const nextPointsToNode: TPointsToNode = [
-        next.id,
-        next, 
-        highway, 
-        distance,
-        way
-      ]
-      next.pointsToNode 
-        ? next.pointsToNode.push(nextPointsToNode) 
-        : (next.pointsToNode = [nextPointsToNode]);
-    }
-  }
-}
-
-class WayHelper {
-  static addNode(way: IOsmWay, node: IOsmNode) {
-    way.nodes ? way.nodes.push(node) : (way.nodes = [node]);
-  }
-  static setCenterOfPolygon(way: IOsmWay, nodes: SuperMap) {
-    const polygon = way.nodeRefs.map(ref => {
-      const node = nodes.get(ref);
-      return [node?.lat || 0, node?.lon || 0];
-    });
-    var p = polylabel([polygon], 1.0);
-
-    way.lat = p[0];
-    way.lon = p[1];
-  }
-}
-
-class ParserStorage implements IOsmParsed {
-  nodes: typeof globalNodes;
-  ways: typeof globalWays;
-  tourism: BTree<string, IOsmNode | IOsmWay>;
-  historic: BTree<string, IOsmNode | IOsmWay>;
-  waterway: BTree<string, IOsmNode | IOsmWay>;
-  natural: BTree<string, IOsmNode | IOsmWay>;
-  sport: BTree<string, IOsmNode | IOsmWay>;
-
-  constructor() {
-    this.ways = globalWays;
-    this.nodes = globalNodes;
-    this.historic = new BTree();
-    this.tourism = new BTree();
-    this.waterway = new BTree();
-    this.natural = new BTree();
-    this.sport = new BTree();
-  }
-}
 
 const Parser = NodeParser(WayParser(ParserStorage));
 
