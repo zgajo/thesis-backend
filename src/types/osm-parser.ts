@@ -1,5 +1,5 @@
 import BTree from "sorted-btree";
-import { SuperMap } from "../services/parser";
+import { SuperMap } from "../services/parser-storage";
 import { IOsmNode, IOsmWay } from "./osm-read";
 
 export interface IOsmParsed {
