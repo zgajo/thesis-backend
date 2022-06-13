@@ -42,6 +42,7 @@ export class ParserStorage implements IOsmParsed {
   waterway: BTree<string, IOsmNode | IOsmWay>;
   natural: BTree<string, IOsmNode | IOsmWay>;
   sport: BTree<string, IOsmNode | IOsmWay>;
+  speeds
 
   constructor() {
     this.ways = {
@@ -58,5 +59,6 @@ export class ParserStorage implements IOsmParsed {
     this.waterway = new BTree();
     this.natural = new BTree();
     this.sport = new BTree();
+    this.speeds = {}
   }
 }

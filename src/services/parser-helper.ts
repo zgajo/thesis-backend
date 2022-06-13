@@ -16,29 +16,25 @@ export class NodeHelper {
 
     const previousPointsToNode: TPointsToNode = {
       nodeId: next.id,
-      node: next, 
-      highway, 
+      node: next,
+      highway,
       distance,
-      way
-    }
+      way,
+    };
 
-    previous.pointsToNode 
-      ? previous.pointsToNode.push(previousPointsToNode) 
-      : (previous.pointsToNode = [previousPointsToNode]);
+    previous.pointsToNode ? previous.pointsToNode.push(previousPointsToNode) : (previous.pointsToNode = [previousPointsToNode]);
 
     // previous.linkCount += 1;
     // previous.street_count += 1;
     if (!oneWay) {
       const nextPointsToNode: TPointsToNode = {
         nodeId: previous.id,
-        node: previous, 
-        highway, 
+        node: previous,
+        highway,
         distance,
-        way
-      }
-      next.pointsToNode 
-        ? next.pointsToNode.push(nextPointsToNode) 
-        : (next.pointsToNode = [nextPointsToNode]);
+        way,
+      };
+      next.pointsToNode ? next.pointsToNode.push(nextPointsToNode) : (next.pointsToNode = [nextPointsToNode]);
     }
   }
 }
@@ -59,3 +55,95 @@ export class WayHelper {
   }
 }
 
+const highwaysNotForDriving = [
+  "abandoned",
+  "bridleway",
+  "bus_guideway",
+  "construction",
+  "corridor",
+  "cycleway",
+  "elevator",
+  "escalator",
+  "footway",
+  "path",
+  "pedestrian",
+  "planned",
+  "platform",
+  "proposed",
+  "raceway",
+  "service",
+  "steps",
+  "track",
+];
+const servicesNotForDriving = ["alley", "driveway", "emergency_access", "parking", "parking_aisle", "private"];
+const highwaysNotForWalking = ["abandoned", "bus_guideway", "construction", "cycleway", "motor", "planned", "platform", "proposed", "raceway"];
+const highwaysNotForBike = [
+  "abandoned",
+  "bus_guideway",
+  "construction",
+  "corridor",
+  "elevator",
+  "escalator",
+  "footway",
+  "motor",
+  "planned",
+  "platform",
+  "proposed",
+  "raceway",
+  "steps",
+];
+
+/**
+   *   driving: filter out un-drivable roads, service roads, private ways, and
+  anything specifying motor=no. also filter out any non-service roads that
+  are tagged as providing certain services
+   * @param way 
+   * @returns 
+  */
+export function isForDriving(way: IOsmWay) {
+  return (
+    way.tags?.highway &&
+    way.tags?.area !== "yes" &&
+    !highwaysNotForDriving.includes(way.tags?.highway) &&
+    !servicesNotForDriving.includes(way.tags?.highway) &&
+    way.tags?.motor_vehicle !== "no" &&
+    way.tags?.motorcar !== "no"
+  );
+}
+/**
+     * walking: filter out cycle ways, motor ways, private ways, and anything
+     specifying foot=no. allow service roads, permitting things like parking
+     lot lanes, alleys, etc that you *can* walk on even if they're not
+     exactly pleasant walks. some cycleways may allow pedestrians, but this
+     filter ignores such cycleways.
+     * @param way 
+     * @returns 
+     */
+export function isForWalking(way: IOsmWay) {
+  return (
+    way.tags?.highway &&
+    way.tags?.area !== "yes" &&
+    !highwaysNotForWalking.includes(way.tags?.highway) &&
+    way.tags?.foot !== "no" &&
+    way.tags?.service !== "private"
+  );
+}
+
+/**
+       * biking: filter out foot ways, motor ways, private ways, and anything
+       specifying biking=no
+       * @param way 
+       */
+export function isForBike(way: IOsmWay) {
+  return (
+    way.tags?.highway &&
+    way.tags?.area !== "yes" &&
+    !highwaysNotForBike.includes(way.tags?.highway) &&
+    way.tags?.bicycle !== "no" &&
+    way.tags?.service !== "private"
+  );
+}
+
+export function isWayToNavigate (way: IOsmWay) {
+  return isForDriving(way) || isForWalking(way)
+}

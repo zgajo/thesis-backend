@@ -1,7 +1,7 @@
 import { IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
-import { NodeHelper, WayHelper } from "./parser-helper";
+import { isWayToNavigate, NodeHelper, WayHelper } from "./parser-helper";
 import { ParserStorage } from "./parser-storage";
 
 function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
@@ -42,6 +42,8 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
     }
 
     private highwayHandler(way: IOsmWay) {
+      if(!isWayToNavigate(way)) return
+      
       const isOneWay = _isPathOneWay(way);
       if (isOneWay && _isPathReversed(way)) {
         way.nodeRefs = way.nodeRefs.reverse();
