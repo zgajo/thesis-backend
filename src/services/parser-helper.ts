@@ -165,7 +165,7 @@ const milesToKph = (miles: number) => {
 
 export function speedTransformer(maxspeed: string | undefined){
   if(!maxspeed) return 
-  
+
   if(maxspeed === "walk") return 6
 
   if(!maxspeed.includes(" ")) return Number(maxspeed)

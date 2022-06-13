@@ -21,6 +21,7 @@ export type TPointsToNode = {
   distance: TPointsToNodeDistance,
   way: IOsmWay,
   polyline?: TPointsToNodePolyline
+  travelTime?: number;
 }
 
 

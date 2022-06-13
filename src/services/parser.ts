@@ -48,24 +48,22 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
         way.nodeRefs = way.nodeRefs.reverse();
       }
 
-      const maxspeed = speedTransformer(way.tags?.maxspeed)
+      const maxspeed = speedTransformer(way.tags?.maxspeed);
 
-      const highway = way.tags?.highway as string
-      const roadSpeed = this.speeds[highway]
+      const highway = way.tags?.highway as string;
+      const roadSpeed = this.speeds[highway];
 
-      
-      if(roadSpeed && maxspeed){
-        roadSpeed.count += 1
-        roadSpeed.totalSpeed += maxspeed
-      }else if(maxspeed) {
+      if (roadSpeed && maxspeed) {
+        roadSpeed.count += 1;
+        roadSpeed.totalSpeed += maxspeed;
+      } else if (maxspeed) {
         const speed = {
           count: 1,
           totalSpeed: maxspeed,
-          speedAvg: 0
-        }
-        this.speeds[highway] = speed
+          speedAvg: 0,
+        };
+        this.speeds[highway] = speed;
       }
-      
 
       let previousNode: IOsmNode | undefined;
       // let wayLine: [number, number][] = [];
@@ -144,16 +142,16 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       this.sport.set(way.id, way);
     }
 
-    calculateAverageSpeed () {
-      Object.entries(this.speeds).forEach(([key, value])=>{
-        const roadAvgSpeed = value.totalSpeed / value.count
-        this.speeds[key].speedAvg = roadAvgSpeed
-        this.averageSpeed = (this.averageSpeed + roadAvgSpeed) / 2
-      })
+    calculateAverageSpeed() {
+      Object.entries(this.speeds).forEach(([key, value]) => {
+        const roadAvgSpeed = value.totalSpeed / value.count;
+        this.speeds[key].speedAvg = roadAvgSpeed;
+        this.averageSpeed = (this.averageSpeed + roadAvgSpeed) / 2;
+      });
     }
 
     simplifyHighway() {
-      this.calculateAverageSpeed()
+      this.calculateAverageSpeed();
 
       this.ways.highway.forEach(way => {
         const isOneWay = _isPathOneWay(way);
@@ -172,7 +170,16 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
             const node = this.nodes.highway.get(way.nodeRefs[i]);
             if (!previousNode || !node) throw new Error(`previousNode: ${previousNode} or node: ${node} not found in highway nodes`);
 
-            const response = this.simplifyNodesCleaner(way, previousNode, node, i === lastIndex, distance, startingCalculationNode, isOneWay, polyline);
+            const response = this.simplifyNodesCleaner(
+              way,
+              previousNode,
+              node,
+              i === lastIndex,
+              distance,
+              startingCalculationNode,
+              isOneWay,
+              polyline,
+            );
 
             if (response) {
               distance = response.distance;
@@ -208,7 +215,17 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       if (holdNode) {
         polyline = `LINESTRING (${polyline})`;
 
-        const newConnection: TPointsToNode = {nodeId: nextNode.id, node: nextNode, highway: way.tags?.highway || "", distance, way, polyline};
+        const travelTime = this.calculateTravelTime(way, distance);
+
+        const newConnection: TPointsToNode = {
+          nodeId: nextNode.id,
+          node: nextNode,
+          highway: way.tags?.highway || "",
+          distance,
+          way,
+          polyline,
+          travelTime,
+        };
 
         this.simplifyNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
 
@@ -235,7 +252,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
       if (!isOneWay) {
         const nextNodeSimplified = this.nodes.highwaySimplified?.get(nextNode.id);
-        const reversedConnection: TPointsToNode = {...newConnection, nodeId: startingCalculationNode.id, node: startingCalculationNode};
+        const reversedConnection: TPointsToNode = { ...newConnection, nodeId: startingCalculationNode.id, node: startingCalculationNode };
 
         if (nextNodeSimplified) {
           (nextNodeSimplified.pointsToNodeSimplified || []).push(reversedConnection);
@@ -244,6 +261,22 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           this.nodes.highwaySimplified?.set(nextNode.id, nextNode);
         }
       }
+    }
+
+    calculateTravelTime(way: IOsmWay, distance: number) {
+      const distanceKm = distance / 1000;
+
+      let maxspeed = speedTransformer(way.tags?.maxspeed);
+
+      if (!maxspeed) {
+        maxspeed = this.speeds[way.tags?.highway as string]?.speedAvg || this.averageSpeed;
+      }
+
+      const speedKmSec = maxspeed / (60 * 60);
+
+      const travelTime = parseFloat(Number(distanceKm / speedKmSec).toFixed(1));
+
+      return travelTime;
     }
   };
 }
