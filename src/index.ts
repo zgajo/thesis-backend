@@ -12,6 +12,7 @@ parse({
   filePath: path.join(__dirname, `${COUNTRY}-latest.osm.pbf`),
   endDocument: function () {
     parserService.simplifyHighway()
+    
     console.timeEnd("nodesImport");
     // simplify graph
     // set speed for each node connection
