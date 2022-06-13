@@ -10,12 +10,13 @@ export interface IOsmParsed {
   waterway:  BTree<string, IOsmNode | IOsmWay>;
   natural:  BTree<string, IOsmNode | IOsmWay>;
   sport:  BTree<string, IOsmNode | IOsmWay>;
+  averageSpeed: number;
   speeds: {
     [key:string]: {
       count: number;
-      speedAvg: number | null;
-      totalSpeed: number | null;
-    }
+      speedAvg: number;
+      totalSpeed: number;
+    },
   } 
 }
 

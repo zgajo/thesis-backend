@@ -147,3 +147,31 @@ export function isForBike(way: IOsmWay) {
 export function isWayToNavigate (way: IOsmWay) {
   return isForDriving(way) || isForWalking(way)
 }
+
+const knotsToKph = (knots: number) => {
+  const kph = Math.round(knots * 1.852)
+
+  return kph
+}
+
+
+const milesToKph = (miles: number) => {
+  const kph = Math.round(miles * 1.60934)
+
+  return kph
+}
+
+
+
+export function speedTransformer(maxspeed: string | undefined){
+  if(!maxspeed) return 
+  
+  if(maxspeed === "walk") return 6
+
+  if(!maxspeed.includes(" ")) return Number(maxspeed)
+
+  const speed = maxspeed.split(" ")
+
+  if(speed[1] === "mph") return milesToKph(Number(speed[0]))
+  if(speed[1] === "knots") return knotsToKph(Number(speed[0]))
+}

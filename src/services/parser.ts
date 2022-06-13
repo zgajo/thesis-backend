@@ -1,7 +1,8 @@
+import { isThisTypeNode } from "typescript";
 import { IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
-import { isWayToNavigate, NodeHelper, WayHelper } from "./parser-helper";
+import { isWayToNavigate, NodeHelper, speedTransformer, WayHelper } from "./parser-helper";
 import { ParserStorage } from "./parser-storage";
 
 function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
@@ -46,6 +47,25 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       if (isOneWay && _isPathReversed(way)) {
         way.nodeRefs = way.nodeRefs.reverse();
       }
+
+      const maxspeed = speedTransformer(way.tags?.maxspeed)
+
+      const highway = way.tags?.highway as string
+      const roadSpeed = this.speeds[highway]
+
+      
+      if(roadSpeed && maxspeed){
+        roadSpeed.count += 1
+        roadSpeed.totalSpeed += maxspeed
+      }else if(maxspeed) {
+        const speed = {
+          count: 1,
+          totalSpeed: maxspeed,
+          speedAvg: 0
+        }
+        this.speeds[highway] = speed
+      }
+      
 
       let previousNode: IOsmNode | undefined;
       // let wayLine: [number, number][] = [];
@@ -124,7 +144,17 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       this.sport.set(way.id, way);
     }
 
+    calculateAverageSpeed () {
+      Object.entries(this.speeds).forEach(([key, value])=>{
+        const roadAvgSpeed = value.totalSpeed / value.count
+        this.speeds[key].speedAvg = roadAvgSpeed
+        this.averageSpeed = (this.averageSpeed + roadAvgSpeed) / 2
+      })
+    }
+
     simplifyHighway() {
+      this.calculateAverageSpeed()
+
       this.ways.highway.forEach(way => {
         const isOneWay = _isPathOneWay(way);
 
