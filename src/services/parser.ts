@@ -1,9 +1,8 @@
 import { IOsmParsed } from "../types/osm-parser";
-import { IOsmNode, IOsmWay } from "../types/osm-read";
+import { IOsmNode, IOsmWay, TPointsToNodeSimplified } from "../types/osm-read";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
 import { NodeHelper, WayHelper } from "./parser-helper";
 import { ParserStorage } from "./parser-storage";
-
 
 function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
   return class WayParser extends Base {
@@ -54,14 +53,14 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       // let line = ""
       way.nodeRefs.forEach((element: string, index) => {
         const highwayNode = this.nodes.highway.get(element);
-        
+
         if (highwayNode) {
           NodeHelper.increaseLinkCount(highwayNode);
           if (previousNode) {
             NodeHelper.connectNodes(previousNode, highwayNode, way.tags?.highway, isOneWay, way);
           }
           // NodeHelper.addWay(highwayNode, way);
-          // WayHelper.addNode(way, highwayNode);
+          WayHelper.addNode(way, highwayNode);
 
           // line += `${highwayNode.lon}, ${highwayNode.lat}`
           // if (index !== nodeRefsLength - 1) {
@@ -77,10 +76,11 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
         if (node) {
           if (previousNode) {
+            NodeHelper.increaseLinkCount(node);
             NodeHelper.connectNodes(previousNode, node, way.tags?.highway, isOneWay, way);
           }
           // NodeHelper.addWay(node, way);
-          // WayHelper.addNode(way, node);
+          WayHelper.addNode(way, node);
           this.nodes.highway.set(element, node);
 
           // line += `${node.lon}, ${node.lat}`
@@ -123,9 +123,101 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       WayHelper.setCenterOfPolygon(way, this.nodes.all);
       this.sport.set(way.id, way);
     }
+
+    roadTransformer() {
+      this.ways.highway.forEach(way => {
+        const isOneWay = _isPathOneWay(way);
+
+        if (way.nodeRefs) {
+          const lastIndex = way.nodeRefs.length - 1;
+
+          let startingCalculationNode = this.nodes.highway.get(way.nodeRefs[0]);
+          let distance = 0;
+
+          if (!startingCalculationNode) throw new Error(`startingCalculationNode: ${startingCalculationNode} not found in highway nodes`);
+          let polyline = `[${startingCalculationNode.lat}, ${startingCalculationNode.lon}], `;
+
+          for (let i = 1; i <= lastIndex; i++) {
+            const previousNode = this.nodes.highway.get(way.nodeRefs[i - 1]);
+            const node = this.nodes.highway.get(way.nodeRefs[i]);
+            if (!previousNode || !node) throw new Error(`previousNode: ${previousNode} or node: ${node} not found in highway nodes`);
+
+            const response = this.roadNodesCleaner(way, previousNode, node, i === lastIndex, distance, startingCalculationNode, isOneWay, polyline);
+
+            if (response) {
+              distance = response.distance;
+              startingCalculationNode = response.startingCalculationNode;
+              polyline = response.polyline;
+            }
+          }
+        }
+      });
+    }
+
+    private roadNodesCleaner(
+      way: IOsmWay,
+      previousNode: IOsmNode,
+      nextNode: IOsmNode,
+      lastIndex: boolean,
+      distance: number,
+      startingCalculationNode: IOsmNode,
+      isOneWay: boolean,
+      polyline: string,
+    ) {
+      if (!previousNode.pointsToNode) return;
+
+      const connection = previousNode.pointsToNode.find(connection => connection[0] === nextNode.id);
+      if (!connection) return;
+
+      const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
+
+      polyline = polyline + `[${nextNode.lat}, ${nextNode.lon}]${holdNode ? "" : ", "}`;
+      distance += connection[3];
+
+      // we've hit the node that needs to be stored
+      if (holdNode) {
+        polyline = `LINESTRING (${polyline})`;
+
+        const newConnection: TPointsToNodeSimplified = [nextNode.id, nextNode, way.tags?.highway || "", distance, way, polyline];
+
+        this.roadNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
+
+        startingCalculationNode = nextNode;
+        polyline = "";
+        distance = 0;
+      }
+      return {
+        startingCalculationNode,
+        polyline,
+        distance,
+      };
+    }
+
+    roadNodesConnector(startingCalculationNode: IOsmNode, nextNode: IOsmNode, newConnection: TPointsToNodeSimplified, isOneWay: boolean) {
+      const startingCalculationNodeSimplified = this.nodes.highwaySimplified?.get(startingCalculationNode.id);
+
+      if (startingCalculationNodeSimplified) {
+        (startingCalculationNodeSimplified.pointsToNodeSimplified || []).push(newConnection);
+      } else {
+        startingCalculationNode.pointsToNodeSimplified = [newConnection];
+        this.nodes.highwaySimplified?.set(startingCalculationNode.id, startingCalculationNode);
+      }
+
+      if (!isOneWay) {
+        const nextNodeSimplified = this.nodes.highwaySimplified?.get(nextNode.id);
+        const reversedConnection: TPointsToNodeSimplified = [...newConnection];
+        reversedConnection[0] = startingCalculationNode.id;
+        reversedConnection[1] = startingCalculationNode;
+        if (nextNodeSimplified) {
+          (nextNodeSimplified.pointsToNodeSimplified || []).push(reversedConnection);
+        } else {
+          nextNode.pointsToNodeSimplified = [reversedConnection];
+          this.nodes.highwaySimplified?.set(nextNode.id, nextNode);
+        }
+      }
+    }
   };
 }
-
 
 function NodeParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
   return class NodeParser extends Base {
@@ -149,7 +241,6 @@ function NodeParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBas
     }
   };
 }
-
 
 const Parser = NodeParser(WayParser(ParserStorage));
 

@@ -12,6 +12,7 @@ interface BaseElement {
 type TPointsToNodeId = string; 
 type TPointsToNodeObject = IOsmNode; 
 type TPointsToNodeHighway = string; 
+type TPointsToNodePolyline = string; 
 type TPointsToNodeDistance = number; 
 export type TPointsToNode = [
   TPointsToNodeId, 
@@ -19,14 +20,28 @@ export type TPointsToNode = [
   TPointsToNodeHighway,
   TPointsToNodeDistance,
   IOsmWay
+] 
+
+export type TPointsToNodeSimplified = [
+  TPointsToNodeId, 
+  TPointsToNodeObject,
+  TPointsToNodeHighway,
+  TPointsToNodeDistance,
+  IOsmWay,
+  TPointsToNodePolyline
 ]
+
+
 export interface IOsmNode extends BaseElement {
   type: 'node';
   lat: number;
   lon: number;
+  inNodes?: number;
+  outNodes?: number;
   linkCount?: number;
   street_count?: number;
   pointsToNode?: TPointsToNode[];
+  pointsToNodeSimplified?: TPointsToNodeSimplified[];
   partOfWays?: IOsmWay[];
   partOfWayId?: string[];
 }

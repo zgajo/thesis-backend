@@ -51,6 +51,7 @@ export class ParserStorage implements IOsmParsed {
     this.nodes = {
       all: new SuperMap(),
       highway: new SuperMap(),
+      highwaySimplified: new BTree<string, IOsmNode>(),
     };
     this.historic = new BTree();
     this.tourism = new BTree();

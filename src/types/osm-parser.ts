@@ -15,4 +15,5 @@ export interface IOsmParsed {
 export interface IGlobalParserData<T, U>{
   all: T extends BTree ? BTree<string, U> : SuperMap<U>;
   highway: T extends BTree ? BTree<string, U> : SuperMap<U>;
+  highwaySimplified?:  BTree<string, IOsmNode>;
 }

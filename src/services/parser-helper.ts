@@ -25,6 +25,9 @@ export class NodeHelper {
     previous.pointsToNode 
       ? previous.pointsToNode.push(previousPointsToNode) 
       : (previous.pointsToNode = [previousPointsToNode]);
+
+    // previous.linkCount += 1;
+    // previous.street_count += 1;
     if (!oneWay) {
       const nextPointsToNode: TPointsToNode = [
         next.id,
