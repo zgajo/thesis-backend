@@ -9,7 +9,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
     handleWay(way: IOsmWay) {
       this.ways.all.set(way.id, way);
       switch (true) {
-        case !!way.tags?.highway:
+        case isWayToNavigate(way):
           return this.highwayHandler(way);
         case !!way.tags?.tourism:
           return this.tourismHandler(way);
@@ -42,8 +42,6 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
     }
 
     private highwayHandler(way: IOsmWay) {
-      if(!isWayToNavigate(way)) return
-      
       const isOneWay = _isPathOneWay(way);
       if (isOneWay && _isPathReversed(way)) {
         way.nodeRefs = way.nodeRefs.reverse();
