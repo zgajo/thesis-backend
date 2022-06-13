@@ -1,5 +1,5 @@
 import { IOsmParsed } from "../types/osm-parser";
-import { IOsmNode, IOsmWay, TPointsToNodeSimplified } from "../types/osm-read";
+import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
 import { NodeHelper, WayHelper } from "./parser-helper";
 import { ParserStorage } from "./parser-storage";
@@ -166,19 +166,19 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
     ) {
       if (!previousNode.pointsToNode) return;
 
-      const connection = previousNode.pointsToNode.find(connection => connection[0] === nextNode.id);
-      if (!connection) return;
+      const connectionNode = previousNode.pointsToNode.find(connectionNode => connectionNode.nodeId === nextNode.id);
+      if (!connectionNode) return;
 
       const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
 
       polyline = polyline + `[${nextNode.lat}, ${nextNode.lon}]${holdNode ? "" : ", "}`;
-      distance += connection[3];
+      distance += connectionNode.distance;
 
       // we've hit the node that needs to be stored
       if (holdNode) {
         polyline = `LINESTRING (${polyline})`;
 
-        const newConnection: TPointsToNodeSimplified = [nextNode.id, nextNode, way.tags?.highway || "", distance, way, polyline];
+        const newConnection: TPointsToNode = {nodeId: nextNode.id, node: nextNode, highway: way.tags?.highway || "", distance, way, polyline};
 
         this.simplifyNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
 
@@ -193,7 +193,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       };
     }
 
-    simplifyNodesConnector(startingCalculationNode: IOsmNode, nextNode: IOsmNode, newConnection: TPointsToNodeSimplified, isOneWay: boolean) {
+    simplifyNodesConnector(startingCalculationNode: IOsmNode, nextNode: IOsmNode, newConnection: TPointsToNode, isOneWay: boolean) {
       const startingCalculationNodeSimplified = this.nodes.highwaySimplified?.get(startingCalculationNode.id);
 
       if (startingCalculationNodeSimplified) {
@@ -205,9 +205,8 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
       if (!isOneWay) {
         const nextNodeSimplified = this.nodes.highwaySimplified?.get(nextNode.id);
-        const reversedConnection: TPointsToNodeSimplified = [...newConnection];
-        reversedConnection[0] = startingCalculationNode.id;
-        reversedConnection[1] = startingCalculationNode;
+        const reversedConnection: TPointsToNode = {...newConnection, nodeId: startingCalculationNode.id, node: startingCalculationNode};
+
         if (nextNodeSimplified) {
           (nextNodeSimplified.pointsToNodeSimplified || []).push(reversedConnection);
         } else {

@@ -14,13 +14,13 @@ export class NodeHelper {
   static connectNodes(previous: IOsmNode, next: IOsmNode, highway: string = "", oneWay: boolean = false, way: IOsmWay) {
     const distance: number = greatCircleVec(previous.lat, previous.lon, next.lat, next.lon);
 
-    const previousPointsToNode: TPointsToNode = [
-      next.id,
-      next, 
+    const previousPointsToNode: TPointsToNode = {
+      nodeId: next.id,
+      node: next, 
       highway, 
       distance,
       way
-    ]
+    }
 
     previous.pointsToNode 
       ? previous.pointsToNode.push(previousPointsToNode) 
@@ -29,13 +29,13 @@ export class NodeHelper {
     // previous.linkCount += 1;
     // previous.street_count += 1;
     if (!oneWay) {
-      const nextPointsToNode: TPointsToNode = [
-        next.id,
-        next, 
+      const nextPointsToNode: TPointsToNode = {
+        nodeId: previous.id,
+        node: previous, 
         highway, 
         distance,
         way
-      ]
+      }
       next.pointsToNode 
         ? next.pointsToNode.push(nextPointsToNode) 
         : (next.pointsToNode = [nextPointsToNode]);

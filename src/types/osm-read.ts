@@ -14,22 +14,14 @@ type TPointsToNodeObject = IOsmNode;
 type TPointsToNodeHighway = string; 
 type TPointsToNodePolyline = string; 
 type TPointsToNodeDistance = number; 
-export type TPointsToNode = [
-  TPointsToNodeId, 
-  TPointsToNodeObject,
-  TPointsToNodeHighway,
-  TPointsToNodeDistance,
-  IOsmWay
-] 
-
-export type TPointsToNodeSimplified = [
-  TPointsToNodeId, 
-  TPointsToNodeObject,
-  TPointsToNodeHighway,
-  TPointsToNodeDistance,
-  IOsmWay,
-  TPointsToNodePolyline
-]
+export type TPointsToNode = {
+  nodeId: TPointsToNodeId, 
+  node: TPointsToNodeObject,
+  highway: TPointsToNodeHighway,
+  distance: TPointsToNodeDistance,
+  way: IOsmWay,
+  polyline?: TPointsToNodePolyline
+}
 
 
 export interface IOsmNode extends BaseElement {
@@ -41,7 +33,7 @@ export interface IOsmNode extends BaseElement {
   linkCount?: number;
   street_count?: number;
   pointsToNode?: TPointsToNode[];
-  pointsToNodeSimplified?: TPointsToNodeSimplified[];
+  pointsToNodeSimplified?: TPointsToNode[];
   partOfWays?: IOsmWay[];
   partOfWayId?: string[];
 }
