@@ -124,7 +124,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       this.sport.set(way.id, way);
     }
 
-    roadTransformer() {
+    simplifyHighway() {
       this.ways.highway.forEach(way => {
         const isOneWay = _isPathOneWay(way);
 
@@ -142,7 +142,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
             const node = this.nodes.highway.get(way.nodeRefs[i]);
             if (!previousNode || !node) throw new Error(`previousNode: ${previousNode} or node: ${node} not found in highway nodes`);
 
-            const response = this.roadNodesCleaner(way, previousNode, node, i === lastIndex, distance, startingCalculationNode, isOneWay, polyline);
+            const response = this.simplifyNodesCleaner(way, previousNode, node, i === lastIndex, distance, startingCalculationNode, isOneWay, polyline);
 
             if (response) {
               distance = response.distance;
@@ -154,7 +154,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       });
     }
 
-    private roadNodesCleaner(
+    private simplifyNodesCleaner(
       way: IOsmWay,
       previousNode: IOsmNode,
       nextNode: IOsmNode,
@@ -180,7 +180,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
         const newConnection: TPointsToNodeSimplified = [nextNode.id, nextNode, way.tags?.highway || "", distance, way, polyline];
 
-        this.roadNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
+        this.simplifyNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
 
         startingCalculationNode = nextNode;
         polyline = "";
@@ -193,7 +193,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       };
     }
 
-    roadNodesConnector(startingCalculationNode: IOsmNode, nextNode: IOsmNode, newConnection: TPointsToNodeSimplified, isOneWay: boolean) {
+    simplifyNodesConnector(startingCalculationNode: IOsmNode, nextNode: IOsmNode, newConnection: TPointsToNodeSimplified, isOneWay: boolean) {
       const startingCalculationNodeSimplified = this.nodes.highwaySimplified?.get(startingCalculationNode.id);
 
       if (startingCalculationNodeSimplified) {
