@@ -4,11 +4,15 @@ export class GeoTreeBox {
   key: string;
   data: GeoTreeBox[];
   values: IOsmNode[];
+  parent: GeoTreeBox | null;
+  flatbuffered: number | null;
 
   constructor(key: string) {
     this.key = key;
     this.data = [];
     this.values = [];
+    this.parent = null;
+    this.flatbuffered = null;
   }
 
   addNode(node: IOsmNode) {
@@ -52,10 +56,12 @@ export class GeoTreeBox {
 export class GeoTree {
   precision: number;
   data: GeoTreeBox[];
+  flatbuffered: number | null;
 
   constructor(precision?: number) {
     this.precision = precision || 10;
     this.data = [];
+    this.flatbuffered = null;
   }
 
   insert(geohash: string, node: IOsmNode, geolevel = 0) {
@@ -64,12 +70,12 @@ export class GeoTree {
     }
   }
 
-  _insert(hash: string, node: IOsmNode, geolevel: number, data: GeoTreeBox[]) {
+  _insert(hash: string, node: IOsmNode, geolevel: number, data: GeoTreeBox[], parent?: GeoTreeBox) {
     const hashStr = hash.substring(0, geolevel + 1);
 
     // Leaf
     if (geolevel + 1 === this.precision) {
-      const d = this.insertIntoLeaf(hashStr, node, data);
+      const d = this.insertIntoLeaf(hashStr, node, data, parent);
 
       return d;
     }
@@ -80,12 +86,16 @@ export class GeoTree {
     if (hashIndex === -1) {
       const box = new GeoTreeBox(hashStr);
 
-      this._insert(hash, node, ++geolevel, box.data);
+      this._insert(hash, node, ++geolevel, box.data, box);
 
       box.sortData();
       box.sortNodes();
 
       data.push(box);
+
+      if(parent){
+        box.parent = parent
+      }
 
       return data;
     }
@@ -99,10 +109,11 @@ export class GeoTree {
     return data;
   }
 
-  insertIntoLeaf(hashStr: string, node: IOsmNode, data: GeoTreeBox[]) {
+  insertIntoLeaf(hashStr: string, node: IOsmNode, data: GeoTreeBox[], parent?: GeoTreeBox) {
     const box = new GeoTreeBox(hashStr);
     box.addNode(node);
     data.push(box);
+    if(parent) box.parent = parent;
     return data;
   }
 

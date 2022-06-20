@@ -4,6 +4,7 @@ import * as path from "path";
 import { COUNTRY } from "./utils/constants";
 import { Parser } from "./services/parser";
 import { IOsmNode } from "./types/osm-read";
+import { FlatbufferHelper } from "./services/parser-flatbuffers";
 
 const parserService = new Parser()
 console.time("nodesImport")
@@ -12,6 +13,8 @@ parse({
   filePath: path.join(__dirname, `${COUNTRY}-latest.osm.pbf`),
   endDocument: function () {
     parserService.simplifyHighway()
+
+    FlatbufferHelper.generateFlatbuffers(parserService)
     
     console.timeEnd("nodesImport");
     // simplify graph

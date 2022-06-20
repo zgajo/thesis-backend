@@ -67,14 +67,6 @@ static endGeohashTree(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static finishGeohashTreeBuffer(builder:flatbuffers.Builder, offset:flatbuffers.Offset) {
-  builder.finish(offset);
-}
-
-static finishSizePrefixedGeohashTreeBuffer(builder:flatbuffers.Builder, offset:flatbuffers.Offset) {
-  builder.finish(offset, undefined, true);
-}
-
 static createGeohashTree(builder:flatbuffers.Builder, precision:number, dataOffset:flatbuffers.Offset):flatbuffers.Offset {
   GeohashTree.startGeohashTree(builder);
   GeohashTree.addPrecision(builder, precision);

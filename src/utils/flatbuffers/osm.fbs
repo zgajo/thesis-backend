@@ -29,4 +29,8 @@ table GeohashTree {
   data: [GeohashTreeBox];
 }
 
-root_type GeohashTree;
+table DataTable {
+  geohash_highway_nodes: GeohashTree;
+}
+
+root_type DataTable;
