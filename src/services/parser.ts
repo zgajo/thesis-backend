@@ -1,4 +1,3 @@
-import { isThisTypeNode } from "typescript";
 import { IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
@@ -22,21 +21,6 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           return this.naturalHandler(way);
         case !!way.tags?.sport:
           return this.sportHandler(way);
-
-        // accomodation
-        // cafe and restoraunt
-        // charging station
-        // store
-        // emergency
-        // filling station
-        // finance
-        // food
-        // leisure
-        // nautical
-        // parking
-        // sightseeing
-        // sports
-        // tourism
         default:
           return way;
       }
@@ -48,7 +32,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
         way.nodeRefs = way.nodeRefs.reverse();
       }
 
-      const maxspeed = speedTransformer(way.tags?.maxspeed);
+      const maxspeed = speedTransformer(way.tags?.maxspeed, way);
 
       const highway = way.tags?.highway as string;
       const roadSpeed = this.speeds[highway];
@@ -266,7 +250,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
     calculateTravelTime(way: IOsmWay, distance: number) {
       const distanceKm = distance / 1000;
 
-      let maxspeed = speedTransformer(way.tags?.maxspeed);
+      let maxspeed = speedTransformer(way.tags?.maxspeed, way);
 
       if (!maxspeed) {
         maxspeed = this.speeds[way.tags?.highway as string]?.speedAvg || this.averageSpeed;
