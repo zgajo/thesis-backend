@@ -1,0 +1,32 @@
+namespace Osm.Parser;
+
+
+table OsmNodesConnectionData {
+  highway: string;
+  distance: double;
+  polyline: string;
+  travel_time: double;
+}
+
+table OsmNodesConnection {
+  node_id: string;
+  data: OsmNodesConnectionData;
+}
+
+table OsmNode {
+  id: string;
+  points_to: [OsmNodesConnection];
+}
+
+table GeohashTreeBox {
+  key: string;
+  data: [GeohashTreeBox];
+  values: [OsmNode];
+}
+
+table GeohashTree {
+  precision: byte;
+  data: [GeohashTreeBox];
+}
+
+root_type GeohashTree;

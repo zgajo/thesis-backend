@@ -39,6 +39,7 @@ export interface IOsmNode extends BaseElement {
   street_count?: number;
   pointsToNode?: TPointsToNode[];
   pointsToNodeSimplified?: TPointsToNode[];
+  flatbuffersPointsToNode?: number[];
   partOfWays?: IOsmWay[];
   partOfWayId?: string[];
 }
