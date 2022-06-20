@@ -1,14 +1,12 @@
 import geohash from "ngeohash";
-import flatbuffers from 'flatbuffers'
 import { IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { GEOHASH_PRECISION } from "../utils/constants";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
 import { isWayToNavigate, NodeHelper, speedTransformer, WayHelper } from "./parser-helper";
 import { ParserStorage } from "./parser-storage";
-import * as OSM from '../utils/flatbuffers/osm'
-
-let builder = new flatbuffers.Builder(1024);
+import * as OSM from "../utils/flatbuffers/osm";
+import { FlatbufferHelper } from "./parser-flatbuffers";
 
 function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
   return class WayParser extends Base {
@@ -219,15 +217,15 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
         this.simplifyNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
 
-        if(!previousNode.geohash) {
+        if (!previousNode.geohash) {
           const hash = geohash.encode(previousNode.lat, previousNode.lon, GEOHASH_PRECISION);
-          this.nodes.highwayGeohash?.insert(hash, previousNode)
-          previousNode.geohash = hash
+          this.nodes.highwayGeohash?.insert(hash, previousNode);
+          previousNode.geohash = hash;
         }
-        if(!nextNode.geohash) {
+        if (!nextNode.geohash) {
           const hash = geohash.encode(nextNode.lat, nextNode.lon, GEOHASH_PRECISION);
-          this.nodes.highwayGeohash?.insert(hash, nextNode)
-          nextNode.geohash = hash
+          this.nodes.highwayGeohash?.insert(hash, nextNode);
+          nextNode.geohash = hash;
         }
 
         startingCalculationNode = nextNode;
@@ -243,43 +241,38 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
     simplifyNodesConnector(startingCalculationNode: IOsmNode, nextNode: IOsmNode, newConnection: TPointsToNode, isOneWay: boolean) {
       const startingCalculationNodeSimplified = this.nodes.highwaySimplified?.get(startingCalculationNode.id);
-      
-      OSM.OsmNodesConnectionData.startOsmNodesConnectionData(builder)
-      OSM.OsmNodesConnectionData.addDistance(builder, newConnection.distance)
-      OSM.OsmNodesConnectionData.addHighway(builder, builder.createString(newConnection.highway))
-      OSM.OsmNodesConnectionData.addPolyline(builder, builder.createString(newConnection.polyline))
-      OSM.OsmNodesConnectionData.addTravelTime(builder, newConnection.travelTime as number)
-      let data = OSM.OsmNodesConnectionData.endOsmNodesConnectionData(builder)
 
-      OSM.OsmNodesConnection.startOsmNodesConnection(builder)
-      OSM.OsmNodesConnection.addData(builder, data)
-      OSM.OsmNodesConnection.addNodeId(builder, builder.createString(newConnection.node.geohash))
-      const startingCalculationNodeSimplifiedConnection = OSM.OsmNodesConnection.endOsmNodesConnection(builder)
+      const connectionData = FlatbufferHelper.nodesConnectorData(
+        newConnection.distance,
+        newConnection.highway,
+        newConnection.polyline as string,
+        newConnection.travelTime as number,
+      );
+
+      const startingCalculationNodeSimplifiedConnection = FlatbufferHelper.nodesConnector(newConnection.node.geohash as string, connectionData);
 
       if (startingCalculationNodeSimplified) {
         (startingCalculationNodeSimplified.pointsToNodeSimplified || []).push(newConnection);
-        startingCalculationNodeSimplified.flatbuffersPointsToNode?.push(startingCalculationNodeSimplifiedConnection)
+        startingCalculationNodeSimplified.flatbuffersPointsToNode?.push(startingCalculationNodeSimplifiedConnection);
       } else {
         startingCalculationNode.pointsToNodeSimplified = [newConnection];
         this.nodes.highwaySimplified?.set(startingCalculationNode.id, startingCalculationNode);
-        startingCalculationNode.flatbuffersPointsToNode = [startingCalculationNodeSimplifiedConnection]
+        startingCalculationNode.flatbuffersPointsToNode = [startingCalculationNodeSimplifiedConnection];
       }
 
       if (!isOneWay) {
         const nextNodeSimplified = this.nodes.highwaySimplified?.get(nextNode.id);
         const reversedConnection: TPointsToNode = { ...newConnection, nodeId: startingCalculationNode.id, node: startingCalculationNode };
-        OSM.OsmNodesConnection.startOsmNodesConnection(builder)
-        OSM.OsmNodesConnection.addData(builder, data)
-        OSM.OsmNodesConnection.addNodeId(builder, builder.createString(reversedConnection.node.geohash))
-        const nextNodeSimplifiedConnection = OSM.OsmNodesConnection.endOsmNodesConnection(builder)
+
+        const nextNodeSimplifiedConnection = FlatbufferHelper.nodesConnector(reversedConnection.node.geohash as string, connectionData);
 
         if (nextNodeSimplified) {
           (nextNodeSimplified.pointsToNodeSimplified || []).push(reversedConnection);
-          nextNodeSimplified.flatbuffersPointsToNode?.push(nextNodeSimplifiedConnection)
+          nextNodeSimplified.flatbuffersPointsToNode?.push(nextNodeSimplifiedConnection);
         } else {
           nextNode.pointsToNodeSimplified = [reversedConnection];
           this.nodes.highwaySimplified?.set(nextNode.id, nextNode);
-          nextNode.flatbuffersPointsToNode = [nextNodeSimplifiedConnection]
+          nextNode.flatbuffersPointsToNode = [nextNodeSimplifiedConnection];
         }
       }
     }
