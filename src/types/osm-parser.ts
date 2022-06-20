@@ -1,6 +1,7 @@
 import BTree from "../trees/Btree/Btree";
 import { SuperMap } from "../services/parser-storage";
 import { IOsmNode, IOsmWay } from "./osm-read";
+import { GeoTree } from "../trees/GeoTree/GeoTree";
 
 export interface IOsmParsed {
   nodes: IGlobalParserData<SuperMap, IOsmNode>;
@@ -24,4 +25,5 @@ export interface IGlobalParserData<T, U>{
   all: T extends BTree ? BTree<string, U> : SuperMap<U>;
   highway: T extends BTree ? BTree<string, U> : SuperMap<U>;
   highwaySimplified?:  BTree<string, IOsmNode>;
+  highwayGeohash?: GeoTree;
 }

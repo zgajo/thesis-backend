@@ -1,3 +1,5 @@
+import { GeoTreeBox } from "../trees/GeoTree/GeoTree";
+
 type OsmElementType = 'node' | 'way' | 'relation';
 
 interface BaseElement {
@@ -29,6 +31,8 @@ export interface IOsmNode extends BaseElement {
   type: 'node';
   lat: number;
   lon: number;
+  geohash?: string;
+  geoTreeBox?: GeoTreeBox;
   inNodes?: number;
   outNodes?: number;
   linkCount?: number;

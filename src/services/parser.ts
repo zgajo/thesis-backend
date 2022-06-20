@@ -1,5 +1,8 @@
+import geohash from "ngeohash";
+
 import { IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
+import { GEOHASH_PRECISION } from "../utils/constants";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
 import { isWayToNavigate, NodeHelper, speedTransformer, WayHelper } from "./parser-helper";
 import { ParserStorage } from "./parser-storage";
@@ -212,6 +215,17 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
         };
 
         this.simplifyNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
+
+        if(!previousNode.geohash) {
+          const hash = geohash.encode(previousNode.lat, previousNode.lon, GEOHASH_PRECISION);
+          this.nodes.highwayGeohash?.insert(hash, previousNode)
+          previousNode.geohash = hash
+        }
+        if(!nextNode.geohash) {
+          const hash = geohash.encode(nextNode.lat, nextNode.lon, GEOHASH_PRECISION);
+          this.nodes.highwayGeohash?.insert(hash, nextNode)
+          nextNode.geohash = hash
+        }
 
         startingCalculationNode = nextNode;
         polyline = "";

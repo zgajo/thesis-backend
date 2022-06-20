@@ -13,3 +13,4 @@ export const onewayValues = {
 
 export const reversedValues = { "-1": true, reverse: true, T: true };
 
+export const GEOHASH_PRECISION = 10
