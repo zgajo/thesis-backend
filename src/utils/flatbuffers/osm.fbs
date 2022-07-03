@@ -21,6 +21,7 @@ table OsmNode {
   polyline: [string];
   distance: [double];
   travel_time: [double];
+  tags: string;
 }
 
 table GeohashTreeBox {
@@ -34,8 +35,28 @@ table GeohashTree {
   data: [GeohashTreeBox];
 }
 
+
+table BTreeNode {
+  keys: [string];
+  values: [OsmNode];  
+  is_shared: bool = false;
+  children: [BTreeNode];
+}
+
+table BTree {
+  size: short;
+  max_node_size: ubyte;
+  root: BTreeNode;
+}
+
 table DataTable {
   geohash_highway_nodes: GeohashTree;
+  btree_simplified: BTree;
+  btree_historic: BTree;
+  btree_natural: BTree;
+  btree_sport: BTree;
+  btree_tourism: BTree;
+  btree_waterway: BTree;
 }
 
 root_type DataTable;

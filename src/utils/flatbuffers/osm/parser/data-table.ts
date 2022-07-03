@@ -2,6 +2,7 @@
 
 import * as flatbuffers from 'flatbuffers';
 
+import { BTree } from '../../osm/parser/b-tree';
 import { GeohashTree } from '../../osm/parser/geohash-tree';
 
 
@@ -28,12 +29,66 @@ geohashHighwayNodes(obj?:GeohashTree):GeohashTree|null {
   return offset ? (obj || new GeohashTree()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
 }
 
+btreeSimplified(obj?:BTree):BTree|null {
+  const offset = this.bb!.__offset(this.bb_pos, 6);
+  return offset ? (obj || new BTree()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+}
+
+btreeHistoric(obj?:BTree):BTree|null {
+  const offset = this.bb!.__offset(this.bb_pos, 8);
+  return offset ? (obj || new BTree()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+}
+
+btreeNatural(obj?:BTree):BTree|null {
+  const offset = this.bb!.__offset(this.bb_pos, 10);
+  return offset ? (obj || new BTree()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+}
+
+btreeSport(obj?:BTree):BTree|null {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? (obj || new BTree()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+}
+
+btreeTourism(obj?:BTree):BTree|null {
+  const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? (obj || new BTree()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+}
+
+btreeWaterway(obj?:BTree):BTree|null {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? (obj || new BTree()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+}
+
 static startDataTable(builder:flatbuffers.Builder) {
-  builder.startObject(1);
+  builder.startObject(7);
 }
 
 static addGeohashHighwayNodes(builder:flatbuffers.Builder, geohashHighwayNodesOffset:flatbuffers.Offset) {
   builder.addFieldOffset(0, geohashHighwayNodesOffset, 0);
+}
+
+static addBtreeSimplified(builder:flatbuffers.Builder, btreeSimplifiedOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(1, btreeSimplifiedOffset, 0);
+}
+
+static addBtreeHistoric(builder:flatbuffers.Builder, btreeHistoricOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(2, btreeHistoricOffset, 0);
+}
+
+static addBtreeNatural(builder:flatbuffers.Builder, btreeNaturalOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(3, btreeNaturalOffset, 0);
+}
+
+static addBtreeSport(builder:flatbuffers.Builder, btreeSportOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(4, btreeSportOffset, 0);
+}
+
+static addBtreeTourism(builder:flatbuffers.Builder, btreeTourismOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(5, btreeTourismOffset, 0);
+}
+
+static addBtreeWaterway(builder:flatbuffers.Builder, btreeWaterwayOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(6, btreeWaterwayOffset, 0);
 }
 
 static endDataTable(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -49,9 +104,4 @@ static finishSizePrefixedDataTableBuffer(builder:flatbuffers.Builder, offset:fla
   builder.finish(offset, undefined, true);
 }
 
-static createDataTable(builder:flatbuffers.Builder, geohashHighwayNodesOffset:flatbuffers.Offset):flatbuffers.Offset {
-  DataTable.startDataTable(builder);
-  DataTable.addGeohashHighwayNodes(builder, geohashHighwayNodesOffset);
-  return DataTable.endDataTable(builder);
-}
 }

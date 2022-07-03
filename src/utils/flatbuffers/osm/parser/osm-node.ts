@@ -93,8 +93,15 @@ travelTimeArray():Float64Array|null {
   return offset ? new Float64Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
 }
 
+tags():string|null
+tags(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
+tags(optionalEncoding?:any):string|Uint8Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
+}
+
 static startOsmNode(builder:flatbuffers.Builder) {
-  builder.startObject(6);
+  builder.startObject(7);
 }
 
 static addId(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset) {
@@ -191,12 +198,16 @@ static startTravelTimeVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(8, numElems, 8);
 }
 
+static addTags(builder:flatbuffers.Builder, tagsOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(6, tagsOffset, 0);
+}
+
 static endOsmNode(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createOsmNode(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset, pointsToOffset:flatbuffers.Offset, highwayOffset:flatbuffers.Offset, polylineOffset:flatbuffers.Offset, distanceOffset:flatbuffers.Offset, travelTimeOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createOsmNode(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset, pointsToOffset:flatbuffers.Offset, highwayOffset:flatbuffers.Offset, polylineOffset:flatbuffers.Offset, distanceOffset:flatbuffers.Offset, travelTimeOffset:flatbuffers.Offset, tagsOffset:flatbuffers.Offset):flatbuffers.Offset {
   OsmNode.startOsmNode(builder);
   OsmNode.addId(builder, idOffset);
   OsmNode.addPointsTo(builder, pointsToOffset);
@@ -204,6 +215,7 @@ static createOsmNode(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset, p
   OsmNode.addPolyline(builder, polylineOffset);
   OsmNode.addDistance(builder, distanceOffset);
   OsmNode.addTravelTime(builder, travelTimeOffset);
+  OsmNode.addTags(builder, tagsOffset);
   return OsmNode.endOsmNode(builder);
 }
 }
