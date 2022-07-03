@@ -37,20 +37,20 @@ export class FlatbufferHelper {
 
   static generateFlatbuffers(parserService: InstanceType<typeof Parser>){    
     const geohashHighwayTable = FlatbufferHelper.generateFlatbuffersHighway(parserService.nodes.highwayGeohash)
-    // const bTreeHistoric = parserService.historic.storeNodesToFile(builder)
-    // const bTreeNatural = parserService.natural.storeNodesToFile(builder)
-    // const bTreeSport = parserService.sport.storeNodesToFile(builder)
-    // const bTreeTourism = parserService.tourism.storeNodesToFile(builder)
-    // const bTreeWaterway = parserService.waterway.storeNodesToFile(builder)
+    const bTreeHistoric = parserService.historic.storeNodesToFile(builder)
+    const bTreeNatural = parserService.natural.storeNodesToFile(builder)
+    const bTreeSport = parserService.sport.storeNodesToFile(builder)
+    const bTreeTourism = parserService.tourism.storeNodesToFile(builder)
+    const bTreeWaterway = parserService.waterway.storeNodesToFile(builder)
 
     DataTable.startDataTable(builder)
 
     if(geohashHighwayTable) DataTable.addGeohashHighwayNodes(builder, geohashHighwayTable)
-    // DataTable.addBtreeHistoric(builder, bTreeHistoric)
-    // DataTable.addBtreeNatural(builder, bTreeNatural)
-    // DataTable.addBtreeSport(builder, bTreeSport)
-    // DataTable.addBtreeTourism(builder, bTreeTourism)
-    // DataTable.addBtreeWaterway(builder, bTreeWaterway)
+    DataTable.addBtreeHistoric(builder, bTreeHistoric)
+    DataTable.addBtreeNatural(builder, bTreeNatural)
+    DataTable.addBtreeSport(builder, bTreeSport)
+    DataTable.addBtreeTourism(builder, bTreeTourism)
+    DataTable.addBtreeWaterway(builder, bTreeWaterway)
 
     const dataTable = DataTable.endDataTable(builder)
 
