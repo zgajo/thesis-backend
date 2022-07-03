@@ -36,14 +36,27 @@ export class FlatbufferHelper {
   // }
 
   static generateFlatbuffers(parserService: InstanceType<typeof Parser>){    
-    const geohashHighwayTable = FlatbufferHelper.generateFlatbuffersHighway(parserService.nodes.highwayGeohash)
+    // const geohashHighwayTable = FlatbufferHelper.generateFlatbuffersHighway(parserService.nodes.highwayGeohash)
+    const bTreeHistoric = parserService.historic.storeNodesToFile(builder)
+    const bTreeNatural = parserService.natural.storeNodesToFile(builder)
+    const bTreeSport = parserService.sport.storeNodesToFile(builder)
+    const bTreeTourism = parserService.tourism.storeNodesToFile(builder)
+    const bTreeWaterway = parserService.waterway.storeNodesToFile(builder)
+
     DataTable.startDataTable(builder)
-    if(geohashHighwayTable) DataTable.addGeohashHighwayNodes(builder, geohashHighwayTable)
+
+    // if(geohashHighwayTable) DataTable.addGeohashHighwayNodes(builder, geohashHighwayTable)
+    DataTable.addBtreeHistoric(builder, bTreeHistoric)
+    DataTable.addBtreeNatural(builder, bTreeNatural)
+    DataTable.addBtreeSport(builder, bTreeSport)
+    DataTable.addBtreeTourism(builder, bTreeTourism)
+    DataTable.addBtreeWaterway(builder, bTreeWaterway)
+
     const dataTable = DataTable.endDataTable(builder)
 
     builder.finish(dataTable)
     let buf = builder.asUint8Array(); // Of type `Uint8Array`.
-    fs.writeFileSync(`${COUNTRY}-flatbuffers.bin`, buf, 'binary');
+    fs.writeFileSync(`${COUNTRY}-osm.bin`, buf, 'binary');
   }
 
   static generateFlatbuffersHighway(geoTree: GeoTree | undefined) {
@@ -99,22 +112,22 @@ export class FlatbufferHelper {
         highways.push(builder.createString( node.highway))
         
         if(node.node.geohash) pointsTo.push( builder.createString(node.node.geohash))
-        // if(node.polyline) polylines.push( builder.createString(node.polyline))
+        if(node.polyline) polylines.push( builder.createString(node.polyline))
         distances.push( node.distance)
         if(node.travelTime) travel_times.push( node.travelTime)
       })
+      OSM.OsmNode.startOsmNode(builder);
 
       const vectorHighways = OSM.OsmNode.createHighwayVector(builder, highways)
       const vectorPointsTo = OSM.OsmNode.createPointsToVector(builder, pointsTo)
-      // const vectorPolylines = OSM.OsmNode.createPolylineVector(builder, polylines)
+      const vectorPolylines = OSM.OsmNode.createPolylineVector(builder, polylines)
       const vectorDistances = OSM.OsmNode.createHighwayVector(builder, distances)
       const vectorTravelTimes = OSM.OsmNode.createHighwayVector(builder, travel_times)
 
-      OSM.OsmNode.startOsmNode(builder);
       if(id) OSM.OsmNode.addId(builder, id);
       OSM.OsmNode.addPointsTo(builder, vectorPointsTo);
       OSM.OsmNode.addHighway(builder, vectorHighways);
-      // OSM.OsmNode.addPolyline(builder, vectorPolylines);
+      OSM.OsmNode.addPolyline(builder, vectorPolylines);
       OSM.OsmNode.addDistance(builder, vectorDistances);
       OSM.OsmNode.addTravelTime(builder, vectorTravelTimes);
       return OSM.OsmNode.endOsmNode(builder);
