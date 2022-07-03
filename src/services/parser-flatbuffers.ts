@@ -2,7 +2,7 @@ import * as flatbuffers from "flatbuffers";
 import * as fs from "fs"
 import BTree from "../trees/Btree/Btree";
 import { GeoTree, GeoTreeBox } from "../trees/GeoTree/GeoTree";
-import { IOsmNode } from "../types/osm-read";
+import { IOsmNode, TPointsToNode } from "../types/osm-read";
 import { COUNTRY } from "../utils/constants";
 import * as OSM from "../utils/flatbuffers/osm";
 import { DataTable } from "../utils/flatbuffers/osm/parser/data-table";
@@ -13,27 +13,27 @@ let builder = new flatbuffers.Builder(1024);
 
 
 export class FlatbufferHelper {
-  static nodesConnectorData(distance: number, highway: string, polyline: string, travelTime: number) {
-    const highwayEncoded = builder.createString(highway);
-    const polylineEncoded = builder.createString(polyline);
+  // static nodesConnectorData(distance: number, highway: string, polyline: string, travelTime: number) {
+  //   const highwayEncoded = builder.createString(highway);
+  //   const polylineEncoded = builder.createString(polyline);
 
-    OSM.OsmNodesConnectionData.startOsmNodesConnectionData(builder);
-    OSM.OsmNodesConnectionData.addDistance(builder, distance);
-    OSM.OsmNodesConnectionData.addHighway(builder, highwayEncoded);
-    OSM.OsmNodesConnectionData.addPolyline(builder, polylineEncoded);
-    OSM.OsmNodesConnectionData.addTravelTime(builder, travelTime);
+  //   OSM.OsmNodesConnectionData.startOsmNodesConnectionData(builder);
+  //   OSM.OsmNodesConnectionData.addDistance(builder, distance);
+  //   OSM.OsmNodesConnectionData.addHighway(builder, highwayEncoded);
+  //   OSM.OsmNodesConnectionData.addPolyline(builder, polylineEncoded);
+  //   OSM.OsmNodesConnectionData.addTravelTime(builder, travelTime);
 
-    return OSM.OsmNodesConnectionData.endOsmNodesConnectionData(builder);
-  }
-  static nodesConnector(nodeId: string, data: number) {
-    const nodeIdEncoded = builder.createString(nodeId);
+  //   return OSM.OsmNodesConnectionData.endOsmNodesConnectionData(builder);
+  // }
+  // static nodesConnector(nodeId: string, data: TPointsToNode) {
+  //   const nodeIdEncoded = builder.createString(nodeId);
 
-    OSM.OsmNodesConnection.startOsmNodesConnection(builder);
-    OSM.OsmNodesConnection.addData(builder, data);
-    OSM.OsmNodesConnection.addNodeId(builder, nodeIdEncoded);
+  //   OSM.OsmNodesConnection.startOsmNodesConnection(builder);
+  //   OSM.OsmNodesConnection.addData(builder, data);
+  //   OSM.OsmNodesConnection.addNodeId(builder, nodeIdEncoded);
 
-    return OSM.OsmNodesConnection.endOsmNodesConnection(builder);
-  }
+  //   return OSM.OsmNodesConnection.endOsmNodesConnection(builder);
+  // }
 
   static generateFlatbuffers(parserService: InstanceType<typeof Parser>){    
     const geohashHighwayTable = FlatbufferHelper.generateFlatbuffersHighway(parserService.nodes.highwayGeohash)
@@ -87,17 +87,36 @@ export class FlatbufferHelper {
     const key = builder.createString(box.key);
 
     const values = box.values.map(node => {
-      const id = builder.createString(node.geohash);
-      let pointsTo;
-      if (node.flatbuffersPointsToNode) {
-        pointsTo = OSM.OsmNode.createPointsToVector(builder, node.flatbuffersPointsToNode);
-      }
+      const id =builder.createString(node.geohash);
+      
+      let highways: number[] = []
+      let polylines: number[] = []
+      let distances: number[] = []
+      let travel_times: number[] = []
+      let pointsTo: number[] = [];
+      
+      node.pointsToNodeSimplified?.forEach(node => {
+        highways.push(builder.createString( node.highway))
+        
+        if(node.node.geohash) pointsTo.push( builder.createString(node.node.geohash))
+        // if(node.polyline) polylines.push( builder.createString(node.polyline))
+        distances.push( node.distance)
+        if(node.travelTime) travel_times.push( node.travelTime)
+      })
+
+      const vectorHighways = OSM.OsmNode.createHighwayVector(builder, highways)
+      const vectorPointsTo = OSM.OsmNode.createPointsToVector(builder, pointsTo)
+      // const vectorPolylines = OSM.OsmNode.createPolylineVector(builder, polylines)
+      const vectorDistances = OSM.OsmNode.createHighwayVector(builder, distances)
+      const vectorTravelTimes = OSM.OsmNode.createHighwayVector(builder, travel_times)
 
       OSM.OsmNode.startOsmNode(builder);
-      OSM.OsmNode.addId(builder, id);
-      if (pointsTo) {
-        OSM.OsmNode.addPointsTo(builder, pointsTo);
-      }
+      if(id) OSM.OsmNode.addId(builder, id);
+      OSM.OsmNode.addPointsTo(builder, vectorPointsTo);
+      OSM.OsmNode.addHighway(builder, vectorHighways);
+      // OSM.OsmNode.addPolyline(builder, vectorPolylines);
+      OSM.OsmNode.addDistance(builder, vectorDistances);
+      OSM.OsmNode.addTravelTime(builder, vectorTravelTimes);
       return OSM.OsmNode.endOsmNode(builder);
     });
 

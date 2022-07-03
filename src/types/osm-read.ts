@@ -22,8 +22,8 @@ export type TPointsToNode = {
   highway: TPointsToNodeHighway,
   distance: TPointsToNodeDistance,
   way: IOsmWay,
-  polyline?: TPointsToNodePolyline
-  travelTime?: number;
+  polyline?: TPointsToNodePolyline,
+  travelTime?: number
 }
 
 

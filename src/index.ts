@@ -1,7 +1,8 @@
 import { parse } from "osm-read";
 import * as path from "path";
+import geohash from "ngeohash";
 
-import { COUNTRY } from "./utils/constants";
+import { COUNTRY, GEOHASH_PRECISION } from "./utils/constants";
 import { Parser } from "./services/parser";
 import { IOsmNode } from "./types/osm-read";
 import { FlatbufferHelper } from "./services/parser-flatbuffers";
@@ -15,6 +16,13 @@ parse({
     parserService.simplifyHighway()
 
     FlatbufferHelper.generateFlatbuffers(parserService)
+    // const current = geohash.encode_int(45.111034, 13.709417, 52)
+    // console.log("My current heohash encode", current)
+    // console.log("My current heohash decode", geohash.decode_int(current))
+    // console.log(geohash.neighbors("u218xunyu"))
+
+    // console.log(parserService.nodes.highwayGeohash?.getAllNodes("sp91ffsv"))
+    
     
     console.timeEnd("nodesImport");
     // simplify graph

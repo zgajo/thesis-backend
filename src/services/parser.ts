@@ -151,7 +151,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           let distance = 0;
 
           if (!startingCalculationNode) throw new Error(`startingCalculationNode: ${startingCalculationNode} not found in highway nodes`);
-          let polyline = `[${startingCalculationNode.lat}, ${startingCalculationNode.lon}], `;
+          let polyline = `[${geohash.encode(startingCalculationNode.lat, startingCalculationNode.lon, GEOHASH_PRECISION)}}], `;
 
           for (let i = 1; i <= lastIndex; i++) {
             const previousNode = this.nodes.highway.get(way.nodeRefs[i - 1]);
@@ -196,7 +196,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
       const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
 
-      polyline = polyline + `[${nextNode.lat}, ${nextNode.lon}]${holdNode ? "" : ", "}`;
+      polyline = polyline + `[${geohash.encode(nextNode.lat, nextNode.lon, GEOHASH_PRECISION -1) }]${holdNode ? "" : ", "}`;
       distance += connectionNode.distance;
 
       // we've hit the node that needs to be stored
@@ -217,10 +217,10 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
         this.simplifyNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
 
-        if (!previousNode.geohash) {
-          const hash = geohash.encode(previousNode.lat, previousNode.lon, GEOHASH_PRECISION);
-          this.nodes.highwayGeohash?.insert(hash, previousNode);
-          previousNode.geohash = hash;
+        if (!startingCalculationNode.geohash) {
+          const hash = geohash.encode(startingCalculationNode.lat, startingCalculationNode.lon, GEOHASH_PRECISION);
+          this.nodes.highwayGeohash?.insert(hash, startingCalculationNode);
+          startingCalculationNode.geohash = hash;
         }
         if (!nextNode.geohash) {
           const hash = geohash.encode(nextNode.lat, nextNode.lon, GEOHASH_PRECISION);
@@ -242,37 +242,35 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
     simplifyNodesConnector(startingCalculationNode: IOsmNode, nextNode: IOsmNode, newConnection: TPointsToNode, isOneWay: boolean) {
       const startingCalculationNodeSimplified = this.nodes.highwaySimplified?.get(startingCalculationNode.id);
 
-      const connectionData = FlatbufferHelper.nodesConnectorData(
-        newConnection.distance,
-        newConnection.highway,
-        newConnection.polyline as string,
-        newConnection.travelTime as number,
-      );
+      // const connectionData = FlatbufferHelper.nodesConnectorData(
+        
+      // );
 
-      const startingCalculationNodeSimplifiedConnection = FlatbufferHelper.nodesConnector(newConnection.node.geohash as string, connectionData);
+
+      // const startingCalculationNodeSimplifiedConnection = FlatbufferHelper.nodesConnector(newConnection.node.geohash as string, connectionData);
 
       if (startingCalculationNodeSimplified) {
         (startingCalculationNodeSimplified.pointsToNodeSimplified || []).push(newConnection);
-        startingCalculationNodeSimplified.flatbuffersPointsToNode?.push(startingCalculationNodeSimplifiedConnection);
+        startingCalculationNodeSimplified.flatbuffersPointsToNode?.push();
       } else {
         startingCalculationNode.pointsToNodeSimplified = [newConnection];
         this.nodes.highwaySimplified?.set(startingCalculationNode.id, startingCalculationNode);
-        startingCalculationNode.flatbuffersPointsToNode = [startingCalculationNodeSimplifiedConnection];
+        // startingCalculationNode.flatbuffersPointsToNode = [startingCalculationNodeSimplifiedConnection];
       }
 
       if (!isOneWay) {
         const nextNodeSimplified = this.nodes.highwaySimplified?.get(nextNode.id);
         const reversedConnection: TPointsToNode = { ...newConnection, nodeId: startingCalculationNode.id, node: startingCalculationNode };
 
-        const nextNodeSimplifiedConnection = FlatbufferHelper.nodesConnector(reversedConnection.node.geohash as string, connectionData);
+        // const nextNodeSimplifiedConnection = FlatbufferHelper.nodesConnector(reversedConnection.node.geohash as string, connectionData);
 
         if (nextNodeSimplified) {
           (nextNodeSimplified.pointsToNodeSimplified || []).push(reversedConnection);
-          nextNodeSimplified.flatbuffersPointsToNode?.push(nextNodeSimplifiedConnection);
+          // nextNodeSimplified.flatbuffersPointsToNode?.push(nextNodeSimplifiedConnection);
         } else {
           nextNode.pointsToNodeSimplified = [reversedConnection];
           this.nodes.highwaySimplified?.set(nextNode.id, nextNode);
-          nextNode.flatbuffersPointsToNode = [nextNodeSimplifiedConnection];
+          // nextNode.flatbuffersPointsToNode = [nextNodeSimplifiedConnection];
         }
       }
     }

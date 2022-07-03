@@ -57,15 +57,18 @@ export class GeoTree {
   precision: number;
   data: GeoTreeBox[];
   flatbuffered: number | null;
+  nodes: number;
 
   constructor(precision?: number) {
     this.precision = precision || 10;
     this.data = [];
     this.flatbuffered = null;
+    this.nodes = 0;
   }
 
   insert(geohash: string, node: IOsmNode, geolevel = 0) {
     if (node) {
+      this.nodes += 1;
       this._insert(geohash, node, geolevel, this.data);
     }
   }

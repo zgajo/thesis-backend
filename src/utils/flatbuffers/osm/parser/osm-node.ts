@@ -2,9 +2,6 @@
 
 import * as flatbuffers from 'flatbuffers';
 
-import { OsmNodesConnection } from '../../osm/parser/osm-nodes-connection';
-
-
 export class OsmNode {
   bb: flatbuffers.ByteBuffer|null = null;
   bb_pos = 0;
@@ -30,9 +27,11 @@ id(optionalEncoding?:any):string|Uint8Array|null {
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
-pointsTo(index: number, obj?:OsmNodesConnection):OsmNodesConnection|null {
+pointsTo(index: number):string
+pointsTo(index: number,optionalEncoding:flatbuffers.Encoding):string|Uint8Array
+pointsTo(index: number,optionalEncoding?:any):string|Uint8Array|null {
   const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? (obj || new OsmNodesConnection()).__init(this.bb!.__indirect(this.bb!.__vector(this.bb_pos + offset) + index * 4), this.bb!) : null;
+  return offset ? this.bb!.__string(this.bb!.__vector(this.bb_pos + offset) + index * 4, optionalEncoding) : null;
 }
 
 pointsToLength():number {
@@ -40,8 +39,62 @@ pointsToLength():number {
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
+highway(index: number):string
+highway(index: number,optionalEncoding:flatbuffers.Encoding):string|Uint8Array
+highway(index: number,optionalEncoding?:any):string|Uint8Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 8);
+  return offset ? this.bb!.__string(this.bb!.__vector(this.bb_pos + offset) + index * 4, optionalEncoding) : null;
+}
+
+highwayLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 8);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+polyline(index: number):string
+polyline(index: number,optionalEncoding:flatbuffers.Encoding):string|Uint8Array
+polyline(index: number,optionalEncoding?:any):string|Uint8Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 10);
+  return offset ? this.bb!.__string(this.bb!.__vector(this.bb_pos + offset) + index * 4, optionalEncoding) : null;
+}
+
+polylineLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 10);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+distance(index: number):number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? this.bb!.readFloat64(this.bb!.__vector(this.bb_pos + offset) + index * 8) : 0;
+}
+
+distanceLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+distanceArray():Float64Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? new Float64Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
+}
+
+travelTime(index: number):number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? this.bb!.readFloat64(this.bb!.__vector(this.bb_pos + offset) + index * 8) : 0;
+}
+
+travelTimeLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+travelTimeArray():Float64Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? new Float64Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
+}
+
 static startOsmNode(builder:flatbuffers.Builder) {
-  builder.startObject(2);
+  builder.startObject(6);
 }
 
 static addId(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset) {
@@ -64,15 +117,93 @@ static startPointsToVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(4, numElems, 4);
 }
 
+static addHighway(builder:flatbuffers.Builder, highwayOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(2, highwayOffset, 0);
+}
+
+static createHighwayVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
+  builder.startVector(4, data.length, 4);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addOffset(data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startHighwayVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(4, numElems, 4);
+}
+
+static addPolyline(builder:flatbuffers.Builder, polylineOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(3, polylineOffset, 0);
+}
+
+static createPolylineVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
+  builder.startVector(4, data.length, 4);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addOffset(data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startPolylineVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(4, numElems, 4);
+}
+
+static addDistance(builder:flatbuffers.Builder, distanceOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(4, distanceOffset, 0);
+}
+
+static createDistanceVector(builder:flatbuffers.Builder, data:number[]|Float64Array):flatbuffers.Offset;
+/**
+ * @deprecated This Uint8Array overload will be removed in the future.
+ */
+static createDistanceVector(builder:flatbuffers.Builder, data:number[]|Uint8Array):flatbuffers.Offset;
+static createDistanceVector(builder:flatbuffers.Builder, data:number[]|Float64Array|Uint8Array):flatbuffers.Offset {
+  builder.startVector(8, data.length, 8);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addFloat64(data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startDistanceVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(8, numElems, 8);
+}
+
+static addTravelTime(builder:flatbuffers.Builder, travelTimeOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(5, travelTimeOffset, 0);
+}
+
+static createTravelTimeVector(builder:flatbuffers.Builder, data:number[]|Float64Array):flatbuffers.Offset;
+/**
+ * @deprecated This Uint8Array overload will be removed in the future.
+ */
+static createTravelTimeVector(builder:flatbuffers.Builder, data:number[]|Uint8Array):flatbuffers.Offset;
+static createTravelTimeVector(builder:flatbuffers.Builder, data:number[]|Float64Array|Uint8Array):flatbuffers.Offset {
+  builder.startVector(8, data.length, 8);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addFloat64(data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startTravelTimeVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(8, numElems, 8);
+}
+
 static endOsmNode(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createOsmNode(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset, pointsToOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createOsmNode(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset, pointsToOffset:flatbuffers.Offset, highwayOffset:flatbuffers.Offset, polylineOffset:flatbuffers.Offset, distanceOffset:flatbuffers.Offset, travelTimeOffset:flatbuffers.Offset):flatbuffers.Offset {
   OsmNode.startOsmNode(builder);
   OsmNode.addId(builder, idOffset);
   OsmNode.addPointsTo(builder, pointsToOffset);
+  OsmNode.addHighway(builder, highwayOffset);
+  OsmNode.addPolyline(builder, polylineOffset);
+  OsmNode.addDistance(builder, distanceOffset);
+  OsmNode.addTravelTime(builder, travelTimeOffset);
   return OsmNode.endOsmNode(builder);
 }
 }

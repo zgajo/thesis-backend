@@ -1,21 +1,26 @@
 namespace Osm.Parser;
 
 
-table OsmNodesConnectionData {
-  highway: string;
-  distance: double;
-  polyline: string;
-  travel_time: double;
-}
+// table OsmNodesConnectionData {
+//   highway: string;
+//   distance: double;
+//   polyline: string;
+//   travel_time: double;
+// }
 
-table OsmNodesConnection {
-  node_id: string;
-  data: OsmNodesConnectionData;
-}
+// table OsmNodesConnectionDistanceTravel {
+//   distance: [double];
+//   travel_time: [double];
+// }
 
 table OsmNode {
   id: string;
-  points_to: [OsmNodesConnection];
+  points_to: [string];
+  highway: [string];
+  // Maybe try using struct of doubles instead of string for polyline
+  polyline: [string];
+  distance: [double];
+  travel_time: [double];
 }
 
 table GeohashTreeBox {
