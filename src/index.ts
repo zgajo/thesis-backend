@@ -1,11 +1,10 @@
 import { parse } from "osm-read";
 import * as path from "path";
-import geohash from "ngeohash";
 
-import { COUNTRY, GEOHASH_PRECISION } from "./utils/constants";
 import { Parser } from "./services/parser";
-import { IOsmNode } from "./types/osm-read";
 import { FlatbufferHelper } from "./services/parser-flatbuffers";
+import { IOsmNode } from "./types/osm-read";
+import { COUNTRY } from "./utils/constants";
 
 const parserService = new Parser()
 console.time("nodesImport")

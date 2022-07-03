@@ -1258,6 +1258,8 @@ class BNode<K,V> {
     const keys = this.keys.map(currentKey => builder.createString(String(currentKey)))
     
     const values = (this.values as unknown as IOsmNode[]).map((current) => {
+      if(current.flatbuffered) return current.flatbuffered
+      
       const id = builder.createString(current.id)
       const tags = builder.createString(JSON.stringify(current.tags))
     

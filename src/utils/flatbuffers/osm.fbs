@@ -51,6 +51,7 @@ table BTree {
 
 table DataTable {
   geohash_highway_nodes: GeohashTree;
+  geohash_elements_nodes: GeohashTree;
   btree_historic: BTree;
   btree_natural: BTree;
   btree_sport: BTree;

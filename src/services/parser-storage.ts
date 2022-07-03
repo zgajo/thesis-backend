@@ -44,6 +44,7 @@ export class ParserStorage implements IOsmParsed {
   sport: BTree<string, IOsmNode | IOsmWay>;
   speeds;
   averageSpeed;
+  geotreeElements: GeoTree<IOsmNode | IOsmWay>;
 
   constructor() {
     this.ways = {
@@ -63,5 +64,6 @@ export class ParserStorage implements IOsmParsed {
     this.sport = new BTree();
     this.speeds = {};
     this.averageSpeed = 0;
+    this.geotreeElements = new GeoTree(GEOHASH_PRECISION)
   }
 }

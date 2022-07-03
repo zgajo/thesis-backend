@@ -11,6 +11,7 @@ export interface IOsmParsed {
   waterway:  BTree<string, IOsmNode | IOsmWay>;
   natural:  BTree<string, IOsmNode | IOsmWay>;
   sport:  BTree<string, IOsmNode | IOsmWay>;
+  geotreeElements: GeoTree<IOsmNode | IOsmWay>,
   averageSpeed: number;
   speeds: {
     [key:string]: {
@@ -25,5 +26,5 @@ export interface IGlobalParserData<T, U>{
   all: T extends BTree ? BTree<string, U> : SuperMap<U>;
   highway: T extends BTree ? BTree<string, U> : SuperMap<U>;
   highwaySimplified?:  BTree<string, IOsmNode>;
-  highwayGeohash?: GeoTree;
+  highwayGeohash?: GeoTree<IOsmNode>;
 }

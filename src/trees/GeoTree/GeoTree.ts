@@ -1,10 +1,10 @@
-import { IOsmNode } from "../../types/osm-read";
+import { IOsmNode, IOsmWay } from "../../types/osm-read";
 
-export class GeoTreeBox {
+export class GeoTreeBox<T  extends { id?: string; geoTreeBox?: GeoTreeBox<T> }> {
   key: string;
-  data: GeoTreeBox[];
-  values: IOsmNode[];
-  parent: GeoTreeBox | null;
+  data: GeoTreeBox<T>[];
+  values: (T)[];
+  parent: GeoTreeBox<T> | null;
   flatbuffered: number | null;
 
   constructor(key: string) {
@@ -15,14 +15,14 @@ export class GeoTreeBox {
     this.flatbuffered = null;
   }
 
-  addNode(node: IOsmNode) {
+  addNode(node: T) {
     this.values.push(node);
     node.geoTreeBox = this;
     this.sortNodes();
     return this;
   }
 
-  addData(box: GeoTreeBox) {
+  addData(box: GeoTreeBox<T>) {
     this.data.push(box);
     this.sortData();
     return this;
@@ -30,6 +30,7 @@ export class GeoTreeBox {
 
   sortNodes() {
     this.values.sort((a, b) => {
+      if(!a.id || !b.id) return 0
       if (a.id > b.id) {
         return 1;
       } else if (a.id < b.id) {
@@ -53,9 +54,9 @@ export class GeoTreeBox {
   }
 }
 
-export class GeoTree {
+export class GeoTree<T> {
   precision: number;
-  data: GeoTreeBox[];
+  data: GeoTreeBox<T>[];
   flatbuffered: number | null;
   nodes: number;
 
@@ -66,14 +67,14 @@ export class GeoTree {
     this.nodes = 0;
   }
 
-  insert(geohash: string, node: IOsmNode, geolevel = 0) {
+  insert(geohash: string, node: T, geolevel = 0) {
     if (node) {
       this.nodes += 1;
       this._insert(geohash, node, geolevel, this.data);
     }
   }
 
-  _insert(hash: string, node: IOsmNode, geolevel: number, data: GeoTreeBox[], parent?: GeoTreeBox) {
+  _insert(hash: string, node: T, geolevel: number, data: GeoTreeBox<T>[], parent?: GeoTreeBox<T>) {
     const hashStr = hash.substring(0, geolevel + 1);
 
     // Leaf
@@ -87,7 +88,7 @@ export class GeoTree {
 
     // create all the hashes from this level to the leaf
     if (hashIndex === -1) {
-      const box = new GeoTreeBox(hashStr);
+      const box = new GeoTreeBox<T>(hashStr);
 
       this._insert(hash, node, ++geolevel, box.data, box);
 
@@ -112,16 +113,16 @@ export class GeoTree {
     return data;
   }
 
-  insertIntoLeaf(hashStr: string, node: IOsmNode, data: GeoTreeBox[], parent?: GeoTreeBox) {
-    const box = new GeoTreeBox(hashStr);
+  insertIntoLeaf(hashStr: string, node: T, data: GeoTreeBox<T>[], parent?: GeoTreeBox<T>) {
+    const box = new GeoTreeBox<T>(hashStr);
     box.addNode(node);
     data.push(box);
     if(parent) box.parent = parent;
     return data;
   }
 
-  hashIndex(hash: string, data: GeoTreeBox[]) {
-    function search(value: GeoTreeBox) {
+  hashIndex(hash: string, data: GeoTreeBox<T>[]) {
+    function search(value: GeoTreeBox<T>) {
       return value.key === hash;
     }
 
@@ -130,7 +131,7 @@ export class GeoTree {
 
   getNode(hash: string) {
     let geolevel = 1;
-    let tmpData: GeoTreeBox[] | undefined = this.data;
+    let tmpData: GeoTreeBox<T>[] | undefined = this.data;
     let node: IOsmNode[] | undefined;
 
     while (geolevel <= this.precision && tmpData) {
@@ -150,13 +151,13 @@ export class GeoTree {
     return node;
   }
 
-  searchInternalNode(tmpData: GeoTreeBox[] | undefined, hashStr: string) {
+  searchInternalNode(tmpData: GeoTreeBox<T>[] | undefined, hashStr: string) {
     return (tmpData || []).find(value => {
       return value.key === hashStr;
     })?.data;
   }
 
-  searchLeafNode(tmpData: GeoTreeBox[] | undefined, hashStr: string) {
+  searchLeafNode(tmpData: GeoTreeBox<T>[] | undefined, hashStr: string) {
     return (tmpData || []).find(value => {
       return value.key === hashStr;
     })?.values;

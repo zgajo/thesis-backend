@@ -32,7 +32,7 @@ export interface IOsmNode extends BaseElement {
   lat: number;
   lon: number;
   geohash?: string;
-  geoTreeBox?: GeoTreeBox;
+  geoTreeBox?: GeoTreeBox<IOsmNode>;
   inNodes?: number;
   outNodes?: number;
   linkCount?: number;
@@ -42,6 +42,7 @@ export interface IOsmNode extends BaseElement {
   flatbuffersPointsToNode?: number[];
   partOfWays?: IOsmWay[];
   partOfWayId?: string[];
+  flatbuffered?: number;
 }
 
 export interface IOsmWay extends BaseElement {
@@ -53,6 +54,9 @@ export interface IOsmWay extends BaseElement {
   geometry?: string;
   lat?: number;
   lon?: number;
+  geohash?: string;
+  geoTreeBox?: GeoTreeBox<IOsmNode | IOsmWay>;
+  flatbuffered?: number;
 }
 
 export interface IOsmRelation extends BaseElement {

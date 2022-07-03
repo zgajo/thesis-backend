@@ -1,12 +1,11 @@
 import * as flatbuffers from "flatbuffers";
-import * as fs from "fs"
-import BTree from "../trees/Btree/Btree";
+import * as fs from "fs";
 import { GeoTree, GeoTreeBox } from "../trees/GeoTree/GeoTree";
-import { IOsmNode, TPointsToNode } from "../types/osm-read";
+import { IOsmNode, IOsmWay } from "../types/osm-read";
 import { COUNTRY } from "../utils/constants";
 import * as OSM from "../utils/flatbuffers/osm";
 import { DataTable } from "../utils/flatbuffers/osm/parser/data-table";
-import {Parser} from './parser'
+import { Parser } from './parser';
 
 let builder = new flatbuffers.Builder(1024);
 
@@ -36,7 +35,8 @@ export class FlatbufferHelper {
   // }
 
   static generateFlatbuffers(parserService: InstanceType<typeof Parser>){    
-    const geohashHighwayTable = FlatbufferHelper.generateFlatbuffersHighway(parserService.nodes.highwayGeohash)
+    const geohashHighwayTable = FlatbufferHelper.generateFlatbuffersGeotree(parserService.nodes.highwayGeohash)
+    const geohashElementsTable = FlatbufferHelper.generateFlatbuffersGeotree(parserService.geotreeElements)
     const bTreeHistoric = parserService.historic.storeNodesToFile(builder)
     const bTreeNatural = parserService.natural.storeNodesToFile(builder)
     const bTreeSport = parserService.sport.storeNodesToFile(builder)
@@ -46,6 +46,7 @@ export class FlatbufferHelper {
     DataTable.startDataTable(builder)
 
     if(geohashHighwayTable) DataTable.addGeohashHighwayNodes(builder, geohashHighwayTable)
+    if(geohashElementsTable) DataTable.addGeohashElementsNodes(builder, geohashElementsTable)
     DataTable.addBtreeHistoric(builder, bTreeHistoric)
     DataTable.addBtreeNatural(builder, bTreeNatural)
     DataTable.addBtreeSport(builder, bTreeSport)
@@ -59,7 +60,7 @@ export class FlatbufferHelper {
     fs.writeFileSync(`${COUNTRY}-osm.bin`, buf, 'binary');
   }
 
-  static generateFlatbuffersHighway(geoTree: GeoTree | undefined) {
+  static generateFlatbuffersGeotree(geoTree: GeoTree<IOsmNode | IOsmWay> | undefined) {
     // root
     if (!geoTree) return;
 
@@ -74,7 +75,7 @@ export class FlatbufferHelper {
     return geohashHighwayTable
   }
 
-  static handleGeoTreeBox(box: GeoTreeBox): number {
+  static handleGeoTreeBox(box: GeoTreeBox<IOsmNode | IOsmWay>): number {
     // inner box
     if (box.data?.length && !box.values?.length) {
       const key = builder.createString(box.key);
@@ -96,7 +97,7 @@ export class FlatbufferHelper {
     }
   }
 
-  static handleGeohashLeaf(box: GeoTreeBox) {
+  static handleGeohashLeaf(box: GeoTreeBox<IOsmNode | IOsmWay>) {
     const key = builder.createString(box.key);
 
     const values = box.values.map(node => {
@@ -108,14 +109,16 @@ export class FlatbufferHelper {
       let travel_times: number[] = []
       let pointsTo: number[] = [];
       
-      node.pointsToNodeSimplified?.forEach(node => {
-        highways.push(builder.createString( node.highway))
-        
-        if(node.node.geohash) pointsTo.push( builder.createString(node.node.geohash))
-        if(node.polyline) polylines.push( builder.createString(node.polyline))
-        distances.push( node.distance)
-        if(node.travelTime) travel_times.push( node.travelTime)
-      })
+      if("pointsToNodeSimplified" in node) {
+        node.pointsToNodeSimplified?.forEach(node => {
+          highways.push(builder.createString( node.highway))
+          
+          if(node.node.geohash) pointsTo.push( builder.createString(node.node.geohash))
+          if(node.polyline) polylines.push( builder.createString(node.polyline))
+          distances.push( node.distance)
+          if(node.travelTime) travel_times.push( node.travelTime)
+        })
+      }
       
       const vectorHighways = highways.length ? OSM.OsmNode.createHighwayVector(builder, highways) : null
       const vectorPolylines = polylines.length ? OSM.OsmNode.createPolylineVector(builder, polylines) : null
@@ -123,6 +126,12 @@ export class FlatbufferHelper {
       const vectorTravelTimes = travel_times.length ? OSM.OsmNode.createHighwayVector(builder, travel_times) : null
       const vectorPointsTo = pointsTo.length ? OSM.OsmNode.createPointsToVector(builder, pointsTo) : null
       
+      // Use tags only if not highway
+      let tags
+      if(!("pointsToNodeSimplified" in node)) {
+        tags =builder.createString(JSON.stringify(node.tags))
+      };
+
       OSM.OsmNode.startOsmNode(builder);
       if(id) OSM.OsmNode.addId(builder, id);
       if(vectorHighways) OSM.OsmNode.addHighway(builder, vectorHighways);
@@ -130,7 +139,12 @@ export class FlatbufferHelper {
       if(vectorDistances) OSM.OsmNode.addDistance(builder, vectorDistances);
       if(vectorTravelTimes) OSM.OsmNode.addTravelTime(builder, vectorTravelTimes);
       if(vectorPointsTo) OSM.OsmNode.addPointsTo(builder, vectorPointsTo);
-      return OSM.OsmNode.endOsmNode(builder);
+      if(!("pointsToNodeSimplified" in node) && tags) {
+        OSM.OsmNode.addTags(builder, tags)
+      };
+      const flatbuffered =  OSM.OsmNode.endOsmNode(builder);
+      node.flatbuffered = flatbuffered;
+      return flatbuffered
     });
 
     const valuesVector = OSM.GeohashTreeBox.createValuesVector(builder, values);

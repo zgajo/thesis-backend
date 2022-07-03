@@ -107,26 +107,46 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
     private tourismHandler(way: IOsmWay) {
       WayHelper.setCenterOfPolygon(way, this.nodes.all);
+      if (way.lat && way.lon) {
+        way.geohash = geohash.encode(way.lat, way.lon, GEOHASH_PRECISION);
+        this.geotreeElements.insert(way.geohash, way);
+      }
       this.tourism.set(way.id, way);
     }
 
     private historicHandler(way: IOsmWay) {
       WayHelper.setCenterOfPolygon(way, this.nodes.all);
+      if (way.lat && way.lon) {
+        way.geohash = geohash.encode(way.lat, way.lon, GEOHASH_PRECISION);
+        this.geotreeElements.insert(way.geohash, way);
+      }
       this.historic.set(way.id, way);
     }
 
     private waterwayHandler(way: IOsmWay) {
       WayHelper.setCenterOfPolygon(way, this.nodes.all);
+      if (way.lat && way.lon) {
+        way.geohash = geohash.encode(way.lat, way.lon, GEOHASH_PRECISION);
+        this.geotreeElements.insert(way.geohash, way);
+      }
       this.waterway.set(way.id, way);
     }
 
     private naturalHandler(way: IOsmWay) {
       WayHelper.setCenterOfPolygon(way, this.nodes.all);
+      if (way.lat && way.lon) {
+        way.geohash = geohash.encode(way.lat, way.lon, GEOHASH_PRECISION);
+        this.geotreeElements.insert(way.geohash, way);
+      }
       this.natural.set(way.id, way);
     }
 
     private sportHandler(way: IOsmWay) {
       WayHelper.setCenterOfPolygon(way, this.nodes.all);
+      if (way.lat && way.lon) {
+        way.geohash = geohash.encode(way.lat, way.lon, GEOHASH_PRECISION);
+        this.geotreeElements.insert(way.geohash, way);
+      }
       this.sport.set(way.id, way);
     }
 
@@ -196,7 +216,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
       const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
 
-      polyline = polyline + `[${geohash.encode(nextNode.lat, nextNode.lon, GEOHASH_PRECISION -1) }]${holdNode ? "" : ", "}`;
+      polyline = polyline + `[${geohash.encode(nextNode.lat, nextNode.lon, GEOHASH_PRECISION - 1)}]${holdNode ? "" : ", "}`;
       distance += connectionNode.distance;
 
       // we've hit the node that needs to be stored
@@ -243,9 +263,8 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       const startingCalculationNodeSimplified = this.nodes.highwaySimplified?.get(startingCalculationNode.id);
 
       // const connectionData = FlatbufferHelper.nodesConnectorData(
-        
-      // );
 
+      // );
 
       // const startingCalculationNodeSimplifiedConnection = FlatbufferHelper.nodesConnector(newConnection.node.geohash as string, connectionData);
 
@@ -300,14 +319,24 @@ function NodeParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBas
 
       switch (true) {
         case !!node.tags.tourism:
+          node.geohash = geohash.encode(node.lat, node.lon, GEOHASH_PRECISION);
+          this.geotreeElements.insert(node.geohash, node);
           return this.tourism.set(node.id, node);
         case !!node.tags.historic:
+          node.geohash = geohash.encode(node.lat, node.lon, GEOHASH_PRECISION);
+          this.geotreeElements.insert(node.geohash, node);
           return this.historic.set(node.id, node);
         case !!node.tags.waterway:
+          node.geohash = geohash.encode(node.lat, node.lon, GEOHASH_PRECISION);
+          this.geotreeElements.insert(node.geohash, node);
           return this.waterway.set(node.id, node);
         case !!node.tags.natural:
+          node.geohash = geohash.encode(node.lat, node.lon, GEOHASH_PRECISION);
+          this.geotreeElements.insert(node.geohash, node);
           return this.natural.set(node.id, node);
         case !!node.tags.sport:
+          node.geohash = geohash.encode(node.lat, node.lon, GEOHASH_PRECISION);
+          this.geotreeElements.insert(node.geohash, node);
           return this.sport.set(node.id, node);
         default:
           return node;
