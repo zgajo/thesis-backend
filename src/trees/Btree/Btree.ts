@@ -1,11 +1,13 @@
 // B+ tree by David Piepgrass. License: MIT
+import { Builder } from 'flatbuffers';
 import { ISortedMap, ISortedMapF, ISortedSet } from './interfaces';
 
 export {
   ISetSource, ISetSink, ISet, ISetF, ISortedSetSource, ISortedSet, ISortedSetF,
   IMapSource, IMapSink, IMap, IMapF, ISortedMapSource, ISortedMap, ISortedMapF
 } from './interfaces';
-
+import * as OSM from '../../utils/flatbuffers/osm'
+import { IOsmNode } from '../../types/osm-read';
 export type EditRangeResult<V,R=number> = {value?:V, break?:R, delete?:boolean};
 
 type index = number;
@@ -206,6 +208,30 @@ export default class BTree<K=any, V=any> implements ISortedMapF<K,V>, ISortedMap
     this._compare = compare || defaultComparator as any as (a: K, b: K) => number;
     if (entries)
       this.setPairs(entries);
+  }
+
+  storeNodesToFile(builder: Builder) {
+    let rootNode: number;
+    if(this._root.constructor.name === "BNodeInternal"){
+      rootNode = (this._root  as BNodeInternal<K,V>).storeNodeTo(builder);
+    }else {
+      rootNode = (this._root).storeNodeToLeaf(builder);
+    }
+
+    OSM.BTree.startBTree(builder);
+
+    // store root to protobuf
+    OSM.BTree.addRoot(builder, rootNode);
+    OSM.BTree.addSize(builder, this._size);
+    OSM.BTree.addMaxNodeSize(builder, this._maxNodeSize);
+
+    const root = OSM.BTree.endBTree(builder);
+    // builder.finish(root);
+
+    return root
+
+    // const serializedBytes = builder.asUint8Array();
+    // return serializedBytes
   }
   
   /////////////////////////////////////////////////////////////////////////////
@@ -1228,6 +1254,34 @@ class BNode<K,V> {
     this.isShared = undefined;
   }
 
+  storeNodeToLeaf(builder: Builder) {
+    const keys = this.keys.map(currentKey => builder.createString(String(currentKey)))
+    
+    const values = (this.values as unknown as IOsmNode[]).map((current) => {
+      const id = builder.createString(current.id)
+      const tags = builder.createString(JSON.stringify(current.tags))
+    
+
+        OSM.OsmNode.startOsmNode(builder)
+        OSM.OsmNode.addId(builder, id)
+        OSM.OsmNode.addTags(builder, tags)
+  
+      
+
+      return OSM.OsmNode.endOsmNode(builder)
+    })
+
+    const keysVector = OSM.BTreeNode.createKeysVector(builder, keys)
+    const valuesVector = OSM.BTreeNode.createValuesVector(builder, values)
+
+    OSM.BTreeNode.startBTreeNode(builder)
+    OSM.BTreeNode.addKeys(builder, keysVector)
+    OSM.BTreeNode.addValues(builder, valuesVector)
+
+    return OSM.BTreeNode.endBTreeNode(builder)
+  }
+
+
   ///////////////////////////////////////////////////////////////////////////
   // Shared methods /////////////////////////////////////////////////////////
 
@@ -1553,6 +1607,31 @@ class BNodeInternal<K,V> extends BNode<K,V> {
     }
     super(keys);
     this.children = children;
+  }
+
+  storeNodeTo(builder: Builder, rootNode?: boolean) {
+    const childs = this.children.map((node) => {
+      // leaf node
+      if (node.isLeaf) {
+        return node.storeNodeToLeaf(builder);
+      } else {
+        return (node as BNodeInternal<K, V>).storeNodeTo(builder);
+      }
+    });
+
+    const children = OSM.BTreeNode.createChildrenVector(builder, childs as []);
+    const keyNums = this.keys.map((key) => Number(key));
+    const keys = OSM.BTreeNode.createKeysVector(builder, keyNums);
+
+    OSM.BTreeNode.startBTreeNode(builder);
+    OSM.BTreeNode.addChildren(builder, children);
+    OSM.BTreeNode.addKeys(builder, keys);
+
+    const internalN = OSM.BTreeNode.endBTreeNode(builder);
+
+    // builder.finish(internalN);
+
+    return internalN;
   }
 
   clone(): BNode<K,V> {
