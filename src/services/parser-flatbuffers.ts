@@ -36,21 +36,21 @@ export class FlatbufferHelper {
   // }
 
   static generateFlatbuffers(parserService: InstanceType<typeof Parser>){    
-    // const geohashHighwayTable = FlatbufferHelper.generateFlatbuffersHighway(parserService.nodes.highwayGeohash)
-    const bTreeHistoric = parserService.historic.storeNodesToFile(builder)
-    const bTreeNatural = parserService.natural.storeNodesToFile(builder)
-    const bTreeSport = parserService.sport.storeNodesToFile(builder)
-    const bTreeTourism = parserService.tourism.storeNodesToFile(builder)
-    const bTreeWaterway = parserService.waterway.storeNodesToFile(builder)
+    const geohashHighwayTable = FlatbufferHelper.generateFlatbuffersHighway(parserService.nodes.highwayGeohash)
+    // const bTreeHistoric = parserService.historic.storeNodesToFile(builder)
+    // const bTreeNatural = parserService.natural.storeNodesToFile(builder)
+    // const bTreeSport = parserService.sport.storeNodesToFile(builder)
+    // const bTreeTourism = parserService.tourism.storeNodesToFile(builder)
+    // const bTreeWaterway = parserService.waterway.storeNodesToFile(builder)
 
     DataTable.startDataTable(builder)
 
-    // if(geohashHighwayTable) DataTable.addGeohashHighwayNodes(builder, geohashHighwayTable)
-    DataTable.addBtreeHistoric(builder, bTreeHistoric)
-    DataTable.addBtreeNatural(builder, bTreeNatural)
-    DataTable.addBtreeSport(builder, bTreeSport)
-    DataTable.addBtreeTourism(builder, bTreeTourism)
-    DataTable.addBtreeWaterway(builder, bTreeWaterway)
+    if(geohashHighwayTable) DataTable.addGeohashHighwayNodes(builder, geohashHighwayTable)
+    // DataTable.addBtreeHistoric(builder, bTreeHistoric)
+    // DataTable.addBtreeNatural(builder, bTreeNatural)
+    // DataTable.addBtreeSport(builder, bTreeSport)
+    // DataTable.addBtreeTourism(builder, bTreeTourism)
+    // DataTable.addBtreeWaterway(builder, bTreeWaterway)
 
     const dataTable = DataTable.endDataTable(builder)
 
@@ -100,7 +100,7 @@ export class FlatbufferHelper {
     const key = builder.createString(box.key);
 
     const values = box.values.map(node => {
-      const id =builder.createString(node.geohash);
+      const id = builder.createString(node.geohash);
       
       let highways: number[] = []
       let polylines: number[] = []
@@ -116,20 +116,20 @@ export class FlatbufferHelper {
         distances.push( node.distance)
         if(node.travelTime) travel_times.push( node.travelTime)
       })
+      
+      const vectorHighways = highways.length ? OSM.OsmNode.createHighwayVector(builder, highways) : null
+      const vectorPolylines = polylines.length ? OSM.OsmNode.createPolylineVector(builder, polylines) : null
+      const vectorDistances = distances.length ? OSM.OsmNode.createHighwayVector(builder, distances) : null
+      const vectorTravelTimes = travel_times.length ? OSM.OsmNode.createHighwayVector(builder, travel_times) : null
+      const vectorPointsTo = pointsTo.length ? OSM.OsmNode.createPointsToVector(builder, pointsTo) : null
+      
       OSM.OsmNode.startOsmNode(builder);
-
-      const vectorHighways = OSM.OsmNode.createHighwayVector(builder, highways)
-      const vectorPointsTo = OSM.OsmNode.createPointsToVector(builder, pointsTo)
-      const vectorPolylines = OSM.OsmNode.createPolylineVector(builder, polylines)
-      const vectorDistances = OSM.OsmNode.createHighwayVector(builder, distances)
-      const vectorTravelTimes = OSM.OsmNode.createHighwayVector(builder, travel_times)
-
       if(id) OSM.OsmNode.addId(builder, id);
-      OSM.OsmNode.addPointsTo(builder, vectorPointsTo);
-      OSM.OsmNode.addHighway(builder, vectorHighways);
-      OSM.OsmNode.addPolyline(builder, vectorPolylines);
-      OSM.OsmNode.addDistance(builder, vectorDistances);
-      OSM.OsmNode.addTravelTime(builder, vectorTravelTimes);
+      if(vectorHighways) OSM.OsmNode.addHighway(builder, vectorHighways);
+      if(vectorPolylines) OSM.OsmNode.addPolyline(builder, vectorPolylines);
+      if(vectorDistances) OSM.OsmNode.addDistance(builder, vectorDistances);
+      if(vectorTravelTimes) OSM.OsmNode.addTravelTime(builder, vectorTravelTimes);
+      if(vectorPointsTo) OSM.OsmNode.addPointsTo(builder, vectorPointsTo);
       return OSM.OsmNode.endOsmNode(builder);
     });
 
