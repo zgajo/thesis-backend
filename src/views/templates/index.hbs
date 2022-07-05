@@ -1,0 +1,16 @@
+<p>{{ text }}</p>
+<div id="mapid"></div>
+<script>
+  console.log("{{{text}}}")
+      // Andorra
+      var mymap = L.map("mapid").setView([42.50903, 1.53605], 10);
+      // Rovinj
+      //- var mymap = L.map("mapid").setView([45.0808344, 13.6383927], 8);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(mymap);
+
+   
+</script>

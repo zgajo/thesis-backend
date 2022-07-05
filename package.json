@@ -10,7 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/view": "^7.0.0",
+    "fastify": "^4.2.0",
     "flatbuffers": "^2.0.6",
+    "handlebars": "^4.7.7",
     "ngeohash": "^0.6.3",
     "osm-read": "^0.7.0",
     "polylabel": "^1.1.0",
