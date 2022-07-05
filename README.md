@@ -16,3 +16,15 @@ Node:
 Way:
 
 Discover how to move this mapping into way so that we could reduce storage space
+
+
+## Possible solutions
+
+
+### 1. Problem with geohash - finding nearest edge:
+
+### Possible solution: 
+
+Not storing geohash, but into rtree - this will give us bigger flatbuffer tree. 
+
+Extracting edges from geohash (using proximity search [proximityhash](https://github.com/ashwin711/proximityhash/blob/master/proximityhash.py) ), importing them into local rtree (rtree of edges), then finding nearest edge to current location. [rbush](https://www.npmjs.com/package/rbush) + [rbush-knn](https://github.com/mourner/rbush-knn)
