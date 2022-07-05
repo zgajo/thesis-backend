@@ -1,4 +1,5 @@
 import { IOsmNode, IOsmWay } from "../../types/osm-read";
+const base32 = '0123456789bcdefghjkmnpqrstuvwxyz'; // (geohash-specific) Base32 map
 
 export class GeoTreeBox<T  extends { id?: string; geoTreeBox?: GeoTreeBox<T> }> {
   key: string;
@@ -162,4 +163,58 @@ export class GeoTree<T> {
       return value.key === hashStr;
     })?.values;
   }
+
+  static /**
+  * Returns SW/NE latitude/longitude bounds of specified geohash.
+  *
+  * @param   {string} geohash - Cell that bounds are required of.
+  * @returns {{sw: {lat: number, lon: number}, ne: {lat: number, lon: number}}}
+  * @throws  Invalid geohash.
+  */
+  bounds(geohash: string) {
+     if (geohash.length == 0) throw new Error('Invalid geohash');
+
+     geohash = geohash.toLowerCase();
+
+     let evenBit = true;
+     let latMin =  -90, latMax =  90;
+     let lonMin = -180, lonMax = 180;
+
+     for (let i=0; i<geohash.length; i++) {
+         const chr = geohash.charAt(i);
+         const idx = base32.indexOf(chr);
+         if (idx == -1) throw new Error('Invalid geohash');
+
+         for (let n=4; n>=0; n--) {
+             const bitN = idx >> n & 1;
+             if (evenBit) {
+                 // longitude
+                 const lonMid = (lonMin+lonMax) / 2;
+                 if (bitN == 1) {
+                     lonMin = lonMid;
+                 } else {
+                     lonMax = lonMid;
+                 }
+             } else {
+                 // latitude
+                 const latMid = (latMin+latMax) / 2;
+                 if (bitN == 1) {
+                     latMin = latMid;
+                 } else {
+                     latMax = latMid;
+                 }
+             }
+             evenBit = !evenBit;
+         }
+     }
+
+     const bounds = [[latMin, lonMin], [latMax,lonMax]]
+    //  {
+    //      sw: { lat: latMin, lon: lonMin },
+    //      ne: { lat: latMax, lon: lonMax },
+    //  };
+
+     return bounds;
+ }
+ 
 }
