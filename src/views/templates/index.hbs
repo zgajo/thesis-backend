@@ -14,8 +14,10 @@
 
   L.circle([42.50903, 1.53605], {radius: 1000, color: "#EE4B2B"}).addTo(map);
 
-  const bounds = JSON.parse("{{{bounds}}}");
-  console.log(bounds)
-  L.rectangle(bounds).addTo(map);
+  const locationBounds = JSON.parse("{{{locationBounds}}}");
+  console.log(locationBounds)
+  L.rectangle(locationBounds).addTo(map);
+  const proximityBounds = JSON.parse("{{{proximityBounds}}}");
+  proximityBounds.forEach(bounds => L.rectangle(bounds).addTo(map))
    
 </script>
