@@ -17,6 +17,7 @@
     "ngeohash": "^0.6.3",
     "osm-read": "^0.7.0",
     "polylabel": "^1.1.0",
+    "proximityhash": "^2.1.2",
     "sorted-btree": "^1.8.0",
     "ts-node": "^10.8.1",
     "typescript": "^4.7.3"
