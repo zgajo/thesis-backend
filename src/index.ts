@@ -1,8 +1,10 @@
 // Require the framework and instantiate it
-import fastify, { FastifyInstance } from 'fastify'
+import fastify, { FastifyInstance, FastifyRequest } from 'fastify'
 import path from 'path'
+import ngeohash from 'ngeohash'
 import fastifyView from "@fastify/view"
 import handlebars from "handlebars"
+import { GeoTree } from './trees/GeoTree/GeoTree';
 
 const server = fastify({
   logger: true
@@ -16,9 +18,15 @@ const server = fastify({
 });
 
 // Declare a route
-server.get('/', async (request, reply) => {
-  console.log("++++++++++++++++++")
-  return reply.view("/templates/index.hbs", { text: "malo" });
+server.get('/', async (request: FastifyRequest<{
+  Querystring: { precision?: number }
+}>
+, reply) => {
+  const precision = request.query.precision || 7
+  const hash = ngeohash.encode(42.50903, 1.53605, precision)
+  const bounds = GeoTree.bounds(hash)
+  
+  return reply.view("/templates/index.hbs", { text: "malo", bounds: JSON.stringify(bounds) });
 })
 
 // Run the server!
