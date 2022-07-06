@@ -27,10 +27,11 @@ server.get(
   "/",
   async (
     request: FastifyRequest<{
-      Querystring: { precision?: number, lat?: number, lon?: number; };
+      Querystring: { precision?: number, lat?: number, lon?: number; radius?: string};
     }>,
     reply,
   ) => {
+    const radius = request.query.radius || 1000
     const precision = request.query.precision || 7;
     const currentPosition = {
       lat: 42.50903,
@@ -47,7 +48,7 @@ server.get(
       latitude: currentPosition.lat,
       longitude: currentPosition.lon,
       precision: 7,
-      radius: 1000,
+      radius: Number(radius),
       georaptorFlag: true, //set true to compress hashes using georaptor
       minlevel: 1, // minimum geohash level, default value: 1
       maxlevel: 10, // maximum geohash level, default value: 12
@@ -107,6 +108,7 @@ server.get(
       closestPoint: JSON.stringify(closestPoint.location),
       currentPosition: JSON.stringify([currentPosition.lat, currentPosition.lon]),
       midpointLatLng: JSON.stringify(midpointLatLng),
+      radius
     });
   },
 );
