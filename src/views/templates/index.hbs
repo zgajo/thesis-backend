@@ -1,17 +1,16 @@
-<p>{{ text }}</p>
 <div id="mapid"></div>
 <script>
   console.log("{{{text}}}")
+  
   const currentPosition = JSON.parse("{{{currentPosition}}}")
       // Andorra
-      var map = L.map("mapid").setView(currentPosition, 18);
-      // Rovinj
-      //- var map = L.map("mapid").setView([45.0808344, 13.6383927], 8);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(map);
+  var map = L.map("mapid").setView(currentPosition, 18);
+  // Rovinj
+  //- var map = L.map("mapid").setView([45.0808344, 13.6383927], 8)
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map);
 
   L.circle(currentPosition, {radius: 1000, color: "#EE4B2B"}).addTo(map);
 
@@ -27,17 +26,22 @@
   console.log(closest)
   L.circle(closest, {radius: 5, color: "#EE4B2B"}).addTo(map);
 
-const midpointLatLng = JSON.parse("{{{midpointLatLng}}}")
-   L.curve(
-	[
-		'M', currentPosition,
-		'Q', midpointLatLng,
-			 closest
-	], {
-	color: 'rgba(255,255,255,0.5)',
-	weight: 5,
-   dashArray: '8, 8', dashOffset: '8'
-}).addTo(map);
+  const midpointLatLng = JSON.parse("{{{midpointLatLng}}}")
+    L.curve(
+    [
+      'M', currentPosition,
+      'Q', midpointLatLng,
+        closest
+    ], {
+    color: 'rgba(255,255,255,0.5)',
+    weight: 5,
+    dashArray: '8, 8', dashOffset: '8'
+  }).addTo(map);
 
-   
+  map.on('click', function(e) {
+    let url = window.location.origin + `?precision=7&lat=${e.latlng.lat}&lon=${e.latlng.lng}`
+
+    window.location.href = url
+  });
+
 </script>

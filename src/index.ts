@@ -27,7 +27,7 @@ server.get(
   "/",
   async (
     request: FastifyRequest<{
-      Querystring: { precision?: number };
+      Querystring: { precision?: number, lat?: number, lon?: number; };
     }>,
     reply,
   ) => {
@@ -36,6 +36,10 @@ server.get(
       lat: 42.50903,
       lon: 1.53605,
     };
+    if(request.query.lat && request.query.lon){
+      currentPosition.lat = Number(request.query.lat)
+      currentPosition.lon = Number(request.query.lon)
+    }
     const hash = ngeohash.encode(currentPosition.lat, currentPosition.lon, precision);
     const locationBounds = GeoTree.bounds(hash);
 
