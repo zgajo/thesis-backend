@@ -39,7 +39,7 @@
   }).addTo(map);
 
   map.on('click', function(e) {
-    let url = window.location.origin + `?precision=7&lat=${e.latlng.lat}&lon=${e.latlng.lng}`
+    let url = window.location.origin + `?precision=9&lat=${e.latlng.lat}&lon=${e.latlng.lng}`
 
     window.location.href = url
   });
