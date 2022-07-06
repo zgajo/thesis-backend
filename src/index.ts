@@ -34,19 +34,21 @@ server.get(
     const proximityGeohashes = proximityhash.createGeohashes({
       latitude: 42.50903,
       longitude: 1.53605,
-      "precision": 7,
-      "radius": 1000,
-      georaptorFlag : true,  //set true to compress hashes using georaptor
-    minlevel : 1, // minimum geohash level, default value: 1
-    maxlevel : 10, // maximum geohash level, default value: 12
-    approxHashCount : true // set to true to round off if the hashes count is greater than 27
-    })
+      precision: 7,
+      radius: 1000,
+      georaptorFlag: true, //set true to compress hashes using georaptor
+      minlevel: 1, // minimum geohash level, default value: 1
+      maxlevel: 10, // maximum geohash level, default value: 12
+      approxHashCount: true, // set to true to round off if the hashes count is greater than 27
+    });
 
+    const proximityBounds = proximityGeohashes.map(GeoTree.bounds);
 
-    const proximityBounds = proximityGeohashes.map(GeoTree.bounds)
-    console.log(proximityGeohashes.length)
-
-    return reply.view("/templates/index.hbs", { text: "malo", locationBounds: JSON.stringify(locationBounds), proximityBounds: JSON.stringify(proximityBounds) });
+    return reply.view("/templates/index.hbs", {
+      text: "malo",
+      locationBounds: JSON.stringify(locationBounds),
+      proximityBounds: JSON.stringify(proximityBounds),
+    });
   },
 );
 
