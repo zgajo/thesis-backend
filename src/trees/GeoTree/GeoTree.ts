@@ -1,10 +1,10 @@
 import { IOsmNode, IOsmWay } from "../../types/osm-read";
-const base32 = '0123456789bcdefghjkmnpqrstuvwxyz'; // (geohash-specific) Base32 map
+const base32 = "0123456789bcdefghjkmnpqrstuvwxyz"; // (geohash-specific) Base32 map
 
-export class GeoTreeBox<T  extends { id?: string; geoTreeBox?: GeoTreeBox<T> }> {
+export class GeoTreeBox<T extends { id?: string; geoTreeBox?: GeoTreeBox<T> }> {
   key: string;
   data: GeoTreeBox<T>[];
-  values: (T)[];
+  values: T[];
   parent: GeoTreeBox<T> | null;
   flatbuffered: number | null;
 
@@ -31,7 +31,7 @@ export class GeoTreeBox<T  extends { id?: string; geoTreeBox?: GeoTreeBox<T> }> 
 
   sortNodes() {
     this.values.sort((a, b) => {
-      if(!a.id || !b.id) return 0
+      if (!a.id || !b.id) return 0;
       if (a.id > b.id) {
         return 1;
       } else if (a.id < b.id) {
@@ -98,8 +98,8 @@ export class GeoTree<T> {
 
       data.push(box);
 
-      if(parent){
-        box.parent = parent
+      if (parent) {
+        box.parent = parent;
       }
 
       return data;
@@ -118,7 +118,7 @@ export class GeoTree<T> {
     const box = new GeoTreeBox<T>(hashStr);
     box.addNode(node);
     data.push(box);
-    if(parent) box.parent = parent;
+    if (parent) box.parent = parent;
     return data;
   }
 
@@ -130,6 +130,56 @@ export class GeoTree<T> {
     return data.findIndex(search);
   }
 
+  getAllNodes(hash: string) {
+    let geolevel = 1;
+    const precision = Math.min(hash.length, this.precision);
+    let tmpData: GeoTreeBox<T>[] | undefined = this.data;
+    let tmpBox: GeoTreeBox<T> | undefined;
+    let nodes: T[] = [];
+
+    while (geolevel <= precision) {
+      const hashStr = hash.substring(0, geolevel);
+
+      // leaf node, search all inside of it
+      if (geolevel === precision) {
+        tmpBox = this.searchBox(tmpData, hashStr);
+        // we are at leaf node
+        if (geolevel === this.precision) {
+          nodes = nodes.concat(tmpBox?.values || []);
+        } else {
+          if (tmpBox) {
+            nodes = nodes.concat(this.getAllNodesByBox(tmpBox));
+          }
+        }
+
+        break;
+      } else {
+        tmpData = this.searchInternalNodeData(tmpData, hashStr);
+      }
+
+      if (!tmpData) return;
+
+      ++geolevel;
+    }
+
+    return nodes;
+    console.log(precision);
+  }
+
+  getAllNodesByBox(box: GeoTreeBox<T>) {
+    let nodes: T[] = [];
+    if (box?.data.length) {
+      for (let i = 0; i < box?.data.length; i++) {
+        let currentBox = box.data[i];
+        nodes = nodes.concat(this.getAllNodesByBox(currentBox));
+      }
+    }
+    else {
+      nodes = nodes.concat(box.values || []);
+    }
+    return nodes;
+  }
+
   getNode(hash: string) {
     let geolevel = 1;
     let tmpData: GeoTreeBox<T>[] | undefined = this.data;
@@ -139,9 +189,9 @@ export class GeoTree<T> {
       const hashStr = hash.substring(0, geolevel);
 
       if (geolevel === this.precision) {
-        return this.searchLeafNode(tmpData, hashStr);
+        return this.searchLeafNodeValues(tmpData, hashStr);
       } else {
-        tmpData = this.searchInternalNode(tmpData, hashStr);
+        tmpData = this.searchInternalNodeData(tmpData, hashStr);
       }
 
       if (!tmpData) return;
@@ -152,69 +202,79 @@ export class GeoTree<T> {
     return node;
   }
 
-  searchInternalNode(tmpData: GeoTreeBox<T>[] | undefined, hashStr: string) {
+  searchBox(tmpData: GeoTreeBox<T>[] | undefined, hashStr: string) {
+    return (tmpData || []).find(value => {
+      return value.key === hashStr;
+    });
+  }
+
+  searchInternalNodeData(tmpData: GeoTreeBox<T>[] | undefined, hashStr: string) {
     return (tmpData || []).find(value => {
       return value.key === hashStr;
     })?.data;
   }
 
-  searchLeafNode(tmpData: GeoTreeBox<T>[] | undefined, hashStr: string) {
+  searchLeafNodeValues(tmpData: GeoTreeBox<T>[] | undefined, hashStr: string) {
     return (tmpData || []).find(value => {
       return value.key === hashStr;
     })?.values;
   }
 
   static /**
-  * Returns SW/NE latitude/longitude bounds of specified geohash.
-  *
-  * @param   {string} geohash - Cell that bounds are required of.
-  * @returns {{sw: {lat: number, lon: number}, ne: {lat: number, lon: number}}}
-  * @throws  Invalid geohash.
-  */
+   * Returns SW/NE latitude/longitude bounds of specified geohash.
+   *
+   * @param   {string} geohash - Cell that bounds are required of.
+   * @returns {{sw: {lat: number, lon: number}, ne: {lat: number, lon: number}}}
+   * @throws  Invalid geohash.
+   */
   bounds(geohash: string) {
-     if (geohash.length == 0) throw new Error('Invalid geohash');
+    if (geohash.length == 0) throw new Error("Invalid geohash");
 
-     geohash = geohash.toLowerCase();
+    geohash = geohash.toLowerCase();
 
-     let evenBit = true;
-     let latMin =  -90, latMax =  90;
-     let lonMin = -180, lonMax = 180;
+    let evenBit = true;
+    let latMin = -90,
+      latMax = 90;
+    let lonMin = -180,
+      lonMax = 180;
 
-     for (let i=0; i<geohash.length; i++) {
-         const chr = geohash.charAt(i);
-         const idx = base32.indexOf(chr);
-         if (idx == -1) throw new Error('Invalid geohash');
+    for (let i = 0; i < geohash.length; i++) {
+      const chr = geohash.charAt(i);
+      const idx = base32.indexOf(chr);
+      if (idx == -1) throw new Error("Invalid geohash");
 
-         for (let n=4; n>=0; n--) {
-             const bitN = idx >> n & 1;
-             if (evenBit) {
-                 // longitude
-                 const lonMid = (lonMin+lonMax) / 2;
-                 if (bitN == 1) {
-                     lonMin = lonMid;
-                 } else {
-                     lonMax = lonMid;
-                 }
-             } else {
-                 // latitude
-                 const latMid = (latMin+latMax) / 2;
-                 if (bitN == 1) {
-                     latMin = latMid;
-                 } else {
-                     latMax = latMid;
-                 }
-             }
-             evenBit = !evenBit;
-         }
-     }
+      for (let n = 4; n >= 0; n--) {
+        const bitN = (idx >> n) & 1;
+        if (evenBit) {
+          // longitude
+          const lonMid = (lonMin + lonMax) / 2;
+          if (bitN == 1) {
+            lonMin = lonMid;
+          } else {
+            lonMax = lonMid;
+          }
+        } else {
+          // latitude
+          const latMid = (latMin + latMax) / 2;
+          if (bitN == 1) {
+            latMin = latMid;
+          } else {
+            latMax = latMid;
+          }
+        }
+        evenBit = !evenBit;
+      }
+    }
 
-     const bounds = [[latMin, lonMin], [latMax,lonMax]]
+    const bounds = [
+      [latMin, lonMin],
+      [latMax, lonMax],
+    ];
     //  {
     //      sw: { lat: latMin, lon: lonMin },
     //      ne: { lat: latMax, lon: lonMax },
     //  };
 
-     return bounds;
- }
- 
+    return bounds;
+  }
 }
