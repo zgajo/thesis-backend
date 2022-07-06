@@ -6,8 +6,10 @@ import ngeohash from "ngeohash";
 import fastifyView from "@fastify/view";
 import handlebars from "handlebars";
 import { GeoTree } from "./trees/GeoTree/GeoTree";
-import { parserService } from './parse';
-import { IOsmNode } from './types/osm-read';
+import { parserService } from "./parse";
+import { IOsmNode } from "./types/osm-read";
+import { pDistance } from "./utils/distance";
+import { getMiddlePointForCurvedLine } from "./utils/leaflet";
 
 const server = fastify({
   logger: true,
@@ -30,12 +32,16 @@ server.get(
     reply,
   ) => {
     const precision = request.query.precision || 7;
-    const hash = ngeohash.encode(42.50903, 1.53605, precision);
+    const currentPosition = {
+      lat: 42.50903,
+      lon: 1.53605,
+    };
+    const hash = ngeohash.encode(currentPosition.lat, currentPosition.lon, precision);
     const locationBounds = GeoTree.bounds(hash);
 
     const proximityGeohashes = proximityhash.createGeohashes({
-      latitude: 42.50903,
-      longitude: 1.53605,
+      latitude: currentPosition.lat,
+      longitude: currentPosition.lon,
       precision: 7,
       radius: 1000,
       georaptorFlag: true, //set true to compress hashes using georaptor
@@ -46,31 +52,57 @@ server.get(
 
     const proximityBounds = proximityGeohashes.map(GeoTree.bounds);
 
-    const allEdges = await Promise.all(proximityGeohashes.map(async (hash)=>{
-      return parserService.nodes.highwayGeohash?.getAllNodes(hash) || []
-    }))
+    const allEdges = await Promise.all(
+      proximityGeohashes.map(async hash => {
+        return parserService.nodes.highwayGeohash?.getAllNodes(hash) || [];
+      }),
+    );
 
-    const edgeFound = new Map()
+    const edgeFound = new Map();
+    let closestPoint: { distance: number; location: [number, number] } = {
+      distance: Infinity,
+      location: [0, 0],
+    };
 
     const mergedEdges = ([] as IOsmNode[]).concat.apply([], allEdges).map(node => {
-      let polylines: unknown[] = [] 
+      let polylines: [number, number][][] = [];
       node.pointsToNodeSimplified?.forEach(pointsToNode => {
-        if(!edgeFound.get(`${node.id}-${pointsToNode.nodeId}`) && !edgeFound.get(`${pointsToNode.nodeId}-${node.id}`)){
-          edgeFound.set(`${node.id}-${pointsToNode.nodeId}`, true)
-          const polyline: unknown = JSON.parse(pointsToNode.polyline || "")
-          polylines.push(polyline)
+        // if(!edgeFound.get(`${node.id}-${pointsToNode.nodeId}`) && !edgeFound.get(`${pointsToNode.nodeId}-${node.id}`)){
+        edgeFound.set(`${node.id}-${pointsToNode.nodeId}`, true);
+        const edges: [number, number][] = JSON.parse(pointsToNode.polyline || "");
+        for (let i = 1; i < edges.length; i++) {
+          const x = { lat: edges[i - 1][0], lon: edges[i - 1][1] };
+          const y = { lat: edges[i][0], lon: edges[i][1] };
+          const calculation = pDistance(currentPosition.lat, currentPosition.lon, x.lat, x.lon, y.lat, y.lon);
+
+          if (calculation.distance < closestPoint?.distance) {
+            closestPoint.distance = calculation.distance;
+            closestPoint.location = [calculation.point.lat, calculation.point.lon];
+          }
         }
-      })
+        polylines.push(edges);
+        // }
+      });
 
-      return polylines
-    })
-    
+      return polylines;
+    });
 
+    // console.time("findingclosest")
+    // mergedEdges.forEach(edges => {
+
+    // })
+    // console.timeEnd("findingclosest")
+
+    const midpointLatLng =getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, closestPoint.location[0], closestPoint.location[1])
+    // console.log("response")
     return reply.view("/templates/index.hbs", {
       text: "malo",
       locationBounds: JSON.stringify(locationBounds),
       proximityBounds: JSON.stringify(proximityBounds),
-      edges: JSON.stringify(mergedEdges)
+      edges: JSON.stringify(mergedEdges),
+      closestPoint: JSON.stringify(closestPoint.location),
+      currentPosition: JSON.stringify([currentPosition.lat, currentPosition.lon]),
+      midpointLatLng: JSON.stringify(midpointLatLng),
     });
   },
 );
