@@ -6,6 +6,8 @@ import ngeohash from "ngeohash";
 import fastifyView from "@fastify/view";
 import handlebars from "handlebars";
 import { GeoTree } from "./trees/GeoTree/GeoTree";
+import { parserService } from './parse';
+import { IOsmNode } from './types/osm-read';
 
 const server = fastify({
   logger: true,
@@ -44,10 +46,31 @@ server.get(
 
     const proximityBounds = proximityGeohashes.map(GeoTree.bounds);
 
+    const allEdges = await Promise.all(proximityGeohashes.map(async (hash)=>{
+      return parserService.nodes.highwayGeohash?.getAllNodes(hash) || []
+    }))
+
+    const edgeFound = new Map()
+
+    const mergedEdges = ([] as IOsmNode[]).concat.apply([], allEdges).map(node => {
+      let polylines: unknown[] = [] 
+      node.pointsToNodeSimplified?.forEach(pointsToNode => {
+        if(!edgeFound.get(`${node.id}-${pointsToNode.nodeId}`) && !edgeFound.get(`${pointsToNode.nodeId}-${node.id}`)){
+          edgeFound.set(`${node.id}-${pointsToNode.nodeId}`, true)
+          const polyline: unknown = JSON.parse(pointsToNode.polyline || "")
+          polylines.push(polyline)
+        }
+      })
+
+      return polylines
+    })
+    
+
     return reply.view("/templates/index.hbs", {
       text: "malo",
       locationBounds: JSON.stringify(locationBounds),
       proximityBounds: JSON.stringify(proximityBounds),
+      edges: JSON.stringify(mergedEdges)
     });
   },
 );

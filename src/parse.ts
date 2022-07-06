@@ -6,7 +6,7 @@ import { FlatbufferHelper } from "./services/parser-flatbuffers";
 import { IOsmNode } from "./types/osm-read";
 import { COUNTRY } from "./utils/constants";
 
-const parserService = new Parser()
+export const parserService = new Parser()
 console.time("nodesImport")
 
 parse({

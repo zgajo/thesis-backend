@@ -19,5 +19,7 @@
   L.rectangle(locationBounds).addTo(map);
   const proximityBounds = JSON.parse("{{{proximityBounds}}}");
   proximityBounds.forEach(bounds => L.rectangle(bounds).addTo(map))
+  const edges = JSON.parse("{{{edges}}}");
+  edges.forEach(edge => L.polyline(edge, {color: 'red'}).addTo(map))
    
 </script>

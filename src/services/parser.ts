@@ -171,7 +171,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           let distance = 0;
 
           if (!startingCalculationNode) throw new Error(`startingCalculationNode: ${startingCalculationNode} not found in highway nodes`);
-          let polyline = `[${geohash.encode(startingCalculationNode.lat, startingCalculationNode.lon, GEOHASH_PRECISION)}}], `;
+          let polyline = `[${startingCalculationNode.lat}, ${startingCalculationNode.lon}], `;
 
           for (let i = 1; i <= lastIndex; i++) {
             const previousNode = this.nodes.highway.get(way.nodeRefs[i - 1]);
@@ -209,19 +209,22 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       isOneWay: boolean,
       polyline: string,
     ) {
+      if(previousNode.id ==="2341328640" ){
+        console.log("2341328648")
+      }
+      const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
+      polyline = polyline + `[${nextNode.lat}, ${nextNode.lon}]${holdNode ? "" : ", "}`;
       if (!previousNode.pointsToNode) return;
-
+      
       const connectionNode = previousNode.pointsToNode.find(connectionNode => connectionNode.nodeId === nextNode.id);
       if (!connectionNode) return;
+      
 
-      const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
-
-      polyline = polyline + `[${geohash.encode(nextNode.lat, nextNode.lon, GEOHASH_PRECISION - 1)}]${holdNode ? "" : ", "}`;
       distance += connectionNode.distance;
 
       // we've hit the node that needs to be stored
       if (holdNode) {
-        polyline = `LINESTRING (${polyline})`;
+        polyline = `[${polyline}]`;
 
         const travelTime = this.calculateTravelTime(way, distance);
 
@@ -249,7 +252,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
         }
 
         startingCalculationNode = nextNode;
-        polyline = "";
+        polyline = `[${startingCalculationNode.lat}, ${startingCalculationNode.lon}], `;;
         distance = 0;
       }
       return {

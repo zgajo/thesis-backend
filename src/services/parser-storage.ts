@@ -55,7 +55,7 @@ export class ParserStorage implements IOsmParsed {
       all: new SuperMap(),
       highway: new SuperMap(),
       highwaySimplified: new BTree<string, IOsmNode>(),
-      highwayGeohash: new GeoTree(7),
+      highwayGeohash: new GeoTree(10),
     };
     this.historic = new BTree();
     this.tourism = new BTree();
@@ -64,6 +64,6 @@ export class ParserStorage implements IOsmParsed {
     this.sport = new BTree();
     this.speeds = {};
     this.averageSpeed = 0;
-    this.geotreeElements = new GeoTree(7)
+    this.geotreeElements = new GeoTree(10)
   }
 }
