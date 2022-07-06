@@ -115,6 +115,11 @@ export class GeoTree<T> {
   }
 
   insertIntoLeaf(hashStr: string, node: T, data: GeoTreeBox<T>[], parent?: GeoTreeBox<T>) {
+    const boxExists = data.find((box)=>box.key === hashStr)
+    if(boxExists){
+      boxExists.addNode(node)
+      return boxExists
+    }
     const box = new GeoTreeBox<T>(hashStr);
     box.addNode(node);
     data.push(box);
