@@ -10,6 +10,7 @@ import { parserService } from "./parse";
 import { IOsmNode } from "./types/osm-read";
 import { pDistance } from "./utils/distance";
 import { getMiddlePointForCurvedLine } from "./utils/leaflet";
+import { AStar } from './graph/Astar';
 
 const server = fastify({
   logger: true,
@@ -97,6 +98,13 @@ server.get(
 
     // })
     // console.timeEnd("findingclosest")
+    const startNode = parserService.nodes.highwayGeohash?.getNode("sp94hkqnqr") as IOsmNode;
+    const endNode = parserService.nodes.highwayGeohash?.getNode("sp919fqvj0")as IOsmNode;
+    // "sp94hkqnqr" - "53276381" - 42.5635230, 1.6015333
+    // "sp919fqvj0" - 52261866 - 42.4643946, 1.4926460
+
+    const astar = new AStar()
+    const {route} = astar.search(startNode, endNode)
 
     const midpointLatLng =getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, closestPoint.location[0], closestPoint.location[1])
     // console.log("response")
@@ -108,7 +116,8 @@ server.get(
       closestPoint: JSON.stringify(closestPoint.location),
       currentPosition: JSON.stringify([currentPosition.lat, currentPosition.lon]),
       midpointLatLng: JSON.stringify(midpointLatLng),
-      radius
+      radius,
+      route: JSON.stringify(route)
     });
   },
 );
