@@ -1,7 +1,7 @@
 import { IOsmNode, IOsmWay } from "../../types/osm-read";
 const base32 = "0123456789bcdefghjkmnpqrstuvwxyz"; // (geohash-specific) Base32 map
 
-export class GeoTreeBox<T extends { id?: string; geoTreeBox?: GeoTreeBox<T> }> {
+export class GeoTreeBox<T extends { id?: string; geohash?: string; geoTreeBox?: GeoTreeBox<T> }> {
   key: string;
   data: GeoTreeBox<T>[];
   values: T[];
@@ -52,6 +52,9 @@ export class GeoTreeBox<T extends { id?: string; geoTreeBox?: GeoTreeBox<T> }> {
         return 0;
       }
     });
+  }
+  searchNode(hash: string) {
+    return this.values.find(node => node.geohash === hash)
   }
 }
 
@@ -194,7 +197,8 @@ export class GeoTree<T> {
       const hashStr = hash.substring(0, geolevel);
 
       if (geolevel === this.precision) {
-        return this.searchLeafNodeValues(tmpData, hashStr);
+        const box = this.searchBox(tmpData, hashStr)
+        return box?.searchNode(hash)
       } else {
         tmpData = this.searchInternalNodeData(tmpData, hashStr);
       }
