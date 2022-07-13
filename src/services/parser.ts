@@ -80,8 +80,8 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
         const node = this.nodes.all.get(element);
 
         if (node) {
+          NodeHelper.increaseLinkCount(node);
           if (previousNode) {
-            NodeHelper.increaseLinkCount(node);
             NodeHelper.connectNodes(previousNode, node, way.tags?.highway, isOneWay, way);
           }
           // NodeHelper.addWay(node, way);
