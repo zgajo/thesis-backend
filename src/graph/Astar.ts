@@ -1,4 +1,5 @@
 import FastPriorityQueue from "fastpriorityqueue";
+import { isForDriving } from '../services/parser-helper';
 import { IOsmNode, TPointsToNode } from "../types/osm-read";
 import { calculateTravelTime, greatCircleVec } from "../utils/distance";
 import { getPenaltyTransition } from "../utils/routing";
@@ -192,6 +193,9 @@ export class AStar {
 
       for (let i = 0; i < neighbors.length; i++) {
         const connection = neighbors[i]
+        if(!isForDriving(connection.way)){
+          continue
+        }
         let neighbor = new SearchNode(neighbors[i].node);
   
         if (!closedSet.find(n => n.node.id === connection.nodeId)) {
