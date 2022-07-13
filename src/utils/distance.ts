@@ -61,3 +61,13 @@ export function pDistance(x: number, y: number, x1: number, y1: number, x2: numb
     distance: Math.sqrt(dx * dx + dy * dy),
   };
 }
+
+export function calculateTravelTime(maxspeed: number, distance: number) {
+  const distanceKm = distance / 1000;
+
+  const speedKmSec = maxspeed / (60 * 60);
+
+  const travelTime = parseFloat(Number(distanceKm / speedKmSec).toFixed(1));
+
+  return travelTime;
+}

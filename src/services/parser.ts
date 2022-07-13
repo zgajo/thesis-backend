@@ -1,12 +1,11 @@
 import geohash from "ngeohash";
+import { haversine } from '../graph/Astar';
 import { IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { GEOHASH_PRECISION } from "../utils/constants";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
 import { isWayToNavigate, NodeHelper, speedTransformer, WayHelper } from "./parser-helper";
 import { ParserStorage } from "./parser-storage";
-import * as OSM from "../utils/flatbuffers/osm";
-import { FlatbufferHelper } from "./parser-flatbuffers";
 
 function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
   return class WayParser extends Base {
@@ -209,24 +208,20 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       isOneWay: boolean,
       polyline: string,
     ) {
-      if(previousNode.id ==="2341328640" ){
-        console.log("2341328648")
-      }
       const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
       polyline = polyline + `[${nextNode.lat}, ${nextNode.lon}]${holdNode ? "" : ", "}`;
+      distance += haversine(previousNode, nextNode);
+      
       if (!previousNode.pointsToNode) return;
       
       const connectionNode = previousNode.pointsToNode.find(connectionNode => connectionNode.nodeId === nextNode.id);
       if (!connectionNode) return;
       
-
-      distance += connectionNode.distance;
-
       // we've hit the node that needs to be stored
       if (holdNode) {
         polyline = `[${polyline}]`;
 
-        const travelTime = this.calculateTravelTime(way, distance);
+        const {travelTime, speed} = this.calculateTravelTime(way, distance);
 
         const newConnection: TPointsToNode = {
           nodeId: nextNode.id,
@@ -236,6 +231,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           way,
           polyline,
           travelTime,
+          speed
         };
 
         this.simplifyNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
@@ -288,11 +284,11 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
         if (nextNodeSimplified) {
           (nextNodeSimplified.pointsToNodeSimplified || []).push(reversedConnection);
-          // nextNodeSimplified.flatbuffersPointsToNode?.push(nextNodeSimplifiedConnection);
-        } else {
-          nextNode.pointsToNodeSimplified = [reversedConnection];
           this.nodes.highwaySimplified?.set(nextNode.id, nextNode);
           // nextNode.flatbuffersPointsToNode = [nextNodeSimplifiedConnection];
+        }else {
+          nextNode.pointsToNodeSimplified = [reversedConnection];
+          this.nodes.highwaySimplified?.set(nextNode.id, nextNode);
         }
       }
     }
@@ -310,7 +306,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
       const travelTime = parseFloat(Number(distanceKm / speedKmSec).toFixed(1));
 
-      return travelTime;
+      return {travelTime, speed: maxspeed};
     }
   };
 }
