@@ -1,14 +1,21 @@
 <div id="mapid"></div>
 <script>  
   const currentPosition = JSON.parse("{{{currentPosition}}}")
+   const route = JSON.parse("{{{route}}}")
+  const endPoint = JSON.parse("{{{endRoutePoint}}}")
+  const startingPoint = JSON.parse("{{{startRoutePoint}}}")
       // Andorra
-  var map = L.map("mapid").setView(currentPosition, 18);
+  var map = L.map("mapid").setView(startingPoint, 18);
+
+  L.gridLayer
+	.googleMutant({
+		type: "roadmap", // valid values are 'roadmap', 'satellite', 'terrain' and 'hybrid'
+	})
+	.addTo(map);
+
   // Rovinj
   //- var map = L.map("mapid").setView([45.0808344, 13.6383927], 8)
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(map);
+ 
 
   L.circle(currentPosition, {radius: "{{{radius}}}", color: "#EE4B2B"}).addTo(map);
 
@@ -24,9 +31,7 @@
   const closest = JSON.parse("{{{closestPoint}}}")
   L.circle(closest, {radius: 5, color: "#EE4B2B"}).addTo(map);
 
-  const route = JSON.parse("{{{route}}}")
-  const endPoint = route[0]
-  const startingPoint = route[route.length - 1]
+ 
 
   L.polyline(route, {color: 'red'}).addTo(map)
 

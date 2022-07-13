@@ -99,11 +99,18 @@ server.get(
     // })
     // console.timeEnd("findingclosest")
     const startNode = parserService.nodes.highwayGeohash?.getNode("sp94hkqnqr") as IOsmNode;
-    const endNode = parserService.nodes.highwayGeohash?.getNode("sp919fqvj0")as IOsmNode;
-    // "sp94hkqnqr" - "53276381" - 42.5635230, 1.6015333
+    const endNode = parserService.nodes.highwayGeohash?.getNode("sp94hkcn0m")as IOsmNode;
+    const end = parserService.nodes.highwaySimplified?.get("3840440576")
+     // "sp94hkqnqr" - "53276381" - 42.5635230, 1.6015333
     // "sp919fqvj0" - 52261866 - 42.4643946, 1.4926460
+    // "sp91gt6vdq" - "625037" - 42.52493531, 1.56393707
+    // sp94hkfs5y - 3840440576- 42.5659164, 1.5966123
+    // sp94hkcn0m - 4526119356- 42.5662131, 1.5944025
+    // "sp94hkfsed" - 3840440595 - 42.5659795, 1.5966076
+    // "sp94hmhb0j" - 2287019228 - 42.5665582, 1.5995507
+    // "sp94hkuvtz" - 53275040 - 42.5661390, 1.5997895
 
-    const astar = new AStar()
+    const astar = new AStar(parserService.averageSpeed)
     const {route} = astar.search(startNode, endNode)
 
     const midpointLatLng =getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, closestPoint.location[0], closestPoint.location[1])
@@ -117,7 +124,9 @@ server.get(
       currentPosition: JSON.stringify([currentPosition.lat, currentPosition.lon]),
       midpointLatLng: JSON.stringify(midpointLatLng),
       radius,
-      route: JSON.stringify(route)
+      route: JSON.stringify(route),
+      startRoutePoint: JSON.stringify([startNode.lat, startNode.lon]),
+      endRoutePoint: JSON.stringify([endNode.lat, endNode.lon]),
     });
   },
 );
