@@ -165,8 +165,12 @@ export class AStar {
       if (current.node.geohash === end.geohash) {
         let temp = current;
         path.push(temp);
+        let route: [number, number][][] = []
         while (temp.previous) {
           path.push(temp.previous);
+          if(temp.polyline){
+            route.push(temp.polyline)
+          }
           temp = temp.previous;
         }
         console.log("DONE!");
@@ -174,7 +178,7 @@ export class AStar {
         console.log("closedSet!", closedSet.length);
         // return the traced path
         return {
-          route: path.reverse().map(sNode => [sNode.node.lat, sNode.node.lon])
+          route
         };
       }
   
@@ -191,7 +195,11 @@ export class AStar {
         let neighbor = new SearchNode(neighbors[i].node);
   
         if (!closedSet.find(n => n.node.id === connection.nodeId)) {
-          let possibleG = current.gScore + (connection.distance as number);
+          let penalty = 0;
+          if(current.highway){
+            penalty = getPenaltyTransition(current.highway, connection.highway)
+          }
+          let possibleG = current.gScore + (connection.travelTime as number) + penalty;
   
           if (!openSet.find(n => n.node.id === connection.nodeId)) {
             openSet.push(neighbor);
@@ -199,10 +207,13 @@ export class AStar {
             continue;
           }
   
+          const heuristicNeighbourghToEnd = greatCircleVec(neighbor.node.lat, neighbor.node.lon, end.lat, end.lon)
           neighbor.gScore = possibleG;
-          neighbor.hScore = greatCircleVec(neighbor.node.lat, neighbor.node.lon, end.lat, end.lon);
+          neighbor.hScore = calculateTravelTime(this.avgSpeed, heuristicNeighbourghToEnd);
           neighbor.fScore = neighbor.gScore + neighbor.hScore;
           neighbor.previous = current;
+          neighbor.polyline = connection.polyline ? JSON.parse(connection.polyline) : [];
+          neighbor.highway = connection.highway;
         }
       }
 

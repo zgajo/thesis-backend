@@ -100,7 +100,8 @@ server.get(
     // console.timeEnd("findingclosest")
     const startNode = parserService.nodes.highwayGeohash?.getNode("sp94hkqnqr") as IOsmNode;
     const endNode = parserService.nodes.highwayGeohash?.getNode("sp94hkcn0m")as IOsmNode;
-    const end = parserService.nodes.highwaySimplified?.get("3840440576")
+    const start = parserService.nodes.highwaySimplified?.get("53276381")
+    const end = parserService.nodes.highwaySimplified?.get("4526119356")
      // "sp94hkqnqr" - "53276381" - 42.5635230, 1.6015333
     // "sp919fqvj0" - 52261866 - 42.4643946, 1.4926460
     // "sp91gt6vdq" - "625037" - 42.52493531, 1.56393707

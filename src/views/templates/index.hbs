@@ -1,7 +1,7 @@
 <div id="mapid"></div>
 <script>  
   const currentPosition = JSON.parse("{{{currentPosition}}}")
-   const route = JSON.parse("{{{route}}}")
+   const routes = JSON.parse("{{{route}}}")
   const endPoint = JSON.parse("{{{endRoutePoint}}}")
   const startingPoint = JSON.parse("{{{startRoutePoint}}}")
       // Andorra
@@ -31,9 +31,7 @@
   const closest = JSON.parse("{{{closestPoint}}}")
   L.circle(closest, {radius: 5, color: "#EE4B2B"}).addTo(map);
 
- 
-
-  L.polyline(route, {color: 'red'}).addTo(map)
+  routes.forEach(route => L.polyline(route, {color: 'red'}).addTo(map))
 
   var startMarker = new L.marker(startingPoint); //opacity may be set to zero
   startMarker.bindTooltip("Start point", {permanent: true }).openPopup();
