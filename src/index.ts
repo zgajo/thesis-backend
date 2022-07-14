@@ -6,7 +6,7 @@ import path from "path";
 import { AStar } from "./graph/Astar";
 import { parserService } from "./parse";
 import { getNearestPoint } from "./services/nearest-point";
-import { IOsmNode } from "./types/osm-read";
+import { IOsmNode, IOsmWay, TPointsToNode } from "./types/osm-read";
 import { getMiddlePointForCurvedLine } from "./utils/leaflet";
 
 const server = fastify({
@@ -40,12 +40,8 @@ server.get(
       currentPosition.lon = Number(request.query.lon);
     }
     const { closestPoint, mergedEdges, proximityBounds, locationBounds } = await getNearestPoint(currentPosition, precision, radius, parserService);
+    const midpointLatLng = getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, closestPoint.location[0], closestPoint.location[1]);
 
-    // console.time("findingclosest")
-    // mergedEdges.forEach(edges => {
-
-    // })
-    // console.timeEnd("findingclosest")
     const startNode = parserService.nodes.highwayGeohash?.getNode("sp94hkqnqr") as IOsmNode;
     const endNode = parserService.nodes.highwayGeohash?.getNode("sp94hkcn0m") as IOsmNode;
     const start = parserService.nodes.highwaySimplified?.get("53276381");
@@ -60,10 +56,36 @@ server.get(
     // "sp94hkuvtz" - 53275040 - 42.5661390, 1.5997895
 
     const astar = new AStar(parserService.averageSpeed);
-    const { route } = astar.search(startNode, endNode);
 
-    const midpointLatLng = getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, closestPoint.location[0], closestPoint.location[1]);
-    // console.log("response")
+    if (closestPoint.pointsToGeohash.length > 1) {
+      astar.addDisabledEdge(closestPoint.pointsToGeohash[0], closestPoint.pointsToGeohash[1]);
+      astar.addDisabledEdge(closestPoint.pointsToGeohash[1], closestPoint.pointsToGeohash[0]);
+    }
+
+    const n: IOsmNode = {
+      id: closestPoint.id,
+      geohash: closestPoint.geohash,
+      lat: closestPoint.location[0],
+      lon: closestPoint.location[1],
+      type: "node",
+      pointsToNodeSimplified: closestPoint.distanceTo.map((distance, index) => {
+        const connection: TPointsToNode = {
+          distance,
+          highway: closestPoint.highway,
+          node: closestPoint.pointsToNode[index],
+          nodeId: closestPoint.pointsToNode[index].id,
+          polyline: closestPoint.polyline[index],
+          speed: closestPoint.speed,
+          travelTime: closestPoint.travelTimeTo[index],
+          way: closestPoint.way as IOsmWay,
+        };
+
+        return connection;
+      }),
+    };
+
+    const { route, current } = astar.search(n, endNode);
+
     return reply.view("/templates/index.hbs", {
       text: "malo",
       locationBounds: JSON.stringify(locationBounds),
@@ -74,7 +96,7 @@ server.get(
       midpointLatLng: JSON.stringify(midpointLatLng),
       radius,
       route: JSON.stringify(route),
-      startRoutePoint: JSON.stringify([startNode.lat, startNode.lon]),
+      startRoutePoint: JSON.stringify([n.lat, n.lon]),
       endRoutePoint: JSON.stringify([endNode.lat, endNode.lon]),
     });
   },
@@ -90,4 +112,6 @@ const start = async () => {
   }
 };
 
-start();
+setTimeout(() => {
+  start();
+}, 2000);

@@ -1,10 +1,10 @@
 import geohash from "ngeohash";
-import { haversine } from '../graph/Astar';
+import { haversine } from "../graph/Astar";
 import { IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { GEOHASH_PRECISION } from "../utils/constants";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
-import { isWayToNavigate, NodeHelper, speedTransformer, WayHelper } from "./parser-helper";
+import { isForWalking, isWayToNavigate, NodeHelper, speedTransformer, WayHelper } from "./parser-helper";
 import { ParserStorage } from "./parser-storage";
 
 function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
@@ -211,17 +211,17 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
       polyline = polyline + `[${nextNode.lat}, ${nextNode.lon}]${holdNode ? "" : ", "}`;
       distance += haversine(previousNode, nextNode);
-      
+
       if (!previousNode.pointsToNode) return;
-      
+
       const connectionNode = previousNode.pointsToNode.find(connectionNode => connectionNode.nodeId === nextNode.id);
       if (!connectionNode) return;
-      
+
       // we've hit the node that needs to be stored
       if (holdNode) {
         polyline = `[${polyline}]`;
 
-        const {travelTime, speed} = this.calculateTravelTime(way, distance);
+        const { travelTime, speed } = this.calculateTravelTime(way, distance);
 
         const newConnection: TPointsToNode = {
           nodeId: nextNode.id,
@@ -231,7 +231,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           way,
           polyline,
           travelTime,
-          speed
+          speed,
         };
 
         this.simplifyNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);
@@ -248,7 +248,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
         }
 
         startingCalculationNode = nextNode;
-        polyline = `[${startingCalculationNode.lat}, ${startingCalculationNode.lon}], `;;
+        polyline = `[${startingCalculationNode.lat}, ${startingCalculationNode.lon}], `;
         distance = 0;
       }
       return {
@@ -278,7 +278,12 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
       if (!isOneWay) {
         const nextNodeSimplified = this.nodes.highwaySimplified?.get(nextNode.id);
-        const reversedConnection: TPointsToNode = { ...newConnection, nodeId: startingCalculationNode.id, node: startingCalculationNode };
+        const reversedConnection: TPointsToNode = {
+          ...newConnection,
+          nodeId: startingCalculationNode.id,
+          node: startingCalculationNode,
+          polyline: JSON.stringify((JSON.parse(newConnection.polyline || "") as [number, number][]).reverse()),
+        };
 
         // const nextNodeSimplifiedConnection = FlatbufferHelper.nodesConnector(reversedConnection.node.geohash as string, connectionData);
 
@@ -286,7 +291,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           (nextNodeSimplified.pointsToNodeSimplified || []).push(reversedConnection);
           this.nodes.highwaySimplified?.set(nextNode.id, nextNode);
           // nextNode.flatbuffersPointsToNode = [nextNodeSimplifiedConnection];
-        }else {
+        } else {
           nextNode.pointsToNodeSimplified = [reversedConnection];
           this.nodes.highwaySimplified?.set(nextNode.id, nextNode);
         }
@@ -299,14 +304,18 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       let maxspeed = speedTransformer(way.tags?.maxspeed, way);
 
       if (!maxspeed) {
-        maxspeed = this.speeds[way.tags?.highway as string]?.speedAvg || this.averageSpeed;
+        if((way.tags?.highway === "footway")){
+          maxspeed = 6
+        }else {
+          maxspeed = this.speeds[way.tags?.highway as string]?.speedAvg || this.averageSpeed;
+        }
       }
 
       const speedKmSec = maxspeed / (60 * 60);
 
       const travelTime = parseFloat(Number(distanceKm / speedKmSec).toFixed(1));
 
-      return {travelTime, speed: maxspeed};
+      return { travelTime, speed: maxspeed };
     }
   };
 }

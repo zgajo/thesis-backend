@@ -24,8 +24,8 @@
   const proximityBounds = JSON.parse("{{{proximityBounds}}}");
   proximityBounds.forEach(bounds => L.rectangle(bounds).addTo(map))
 
-  const edges = JSON.parse("{{{edges}}}");
-  edges.forEach(edge => L.polyline(edge, {color: 'red'}).addTo(map))
+  {{!-- const edges = JSON.parse("{{{edges}}}");
+  edges.forEach(edge => L.polyline(edge, {color: 'red'}).addTo(map)) --}}
 
   const closest = JSON.parse("{{{closestPoint}}}")
   L.circle(closest, {radius: 5, color: "#EE4B2B"}).addTo(map);

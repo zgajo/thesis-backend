@@ -1,5 +1,5 @@
 import FastPriorityQueue from "fastpriorityqueue";
-import { isForDriving } from '../services/parser-helper';
+import { isForBike, isForDriving, isForWalking } from '../services/parser-helper';
 import { IOsmNode, TPointsToNode } from "../types/osm-read";
 import { calculateTravelTime, greatCircleVec } from "../utils/distance";
 import { getPenaltyTransition } from "../utils/routing";
@@ -23,8 +23,9 @@ const diagonal = function (pos0: IOsmNode, pos1: IOsmNode) {
   return D * (d1 + d2) + (D2 - 2 * D) * Math.min(d1, d2);
 };
 
+type Position = {lat: number, lon: number}
 // https://www.movable-type.co.uk/scripts/latlong.html
-export const haversine = (a: IOsmNode, b: IOsmNode) => {
+export const haversine = (a: IOsmNode | Position, b: IOsmNode | Position) => {
   const R = 6371e3; // metres
   const φ1 = (a.lat * Math.PI) / 180; // φ, λ in radians
   const φ2 = (b.lat * Math.PI) / 180;
@@ -108,17 +109,21 @@ class PriorityQueue {
   }
 }
 export class AStar {
-  avgSpeed: number;
+  private avgSpeed: number;
+  private disabledEdges: Map<string, boolean>;
   constructor(avgSpeed: number) {
     this.avgSpeed = avgSpeed;
+    this.disabledEdges = new Map()
+  }
+
+  addDisabledEdge(from: string, to: string){
+    this.disabledEdges.set(`${from}-${to}`, true)
   }
 
   search(start: IOsmNode, end: IOsmNode) {
     let openSet: SearchNode[] = [new SearchNode(start)]; //array containing unevaluated grid points
     let closedSet: SearchNode[] = []; //array containing completely evaluated grid points
     let path = [];
-    let current;
-    let routeFound = false
 
     while (openSet.length > 0) {
       //assumption lowest index is the first one to begin with
@@ -129,39 +134,6 @@ export class AStar {
         }
       }
       let current = openSet[lowestIndex];
-
-      // kruzni koji bi trebao gledadti na 3840440595 i 625256
-        // ne gleda na 3840440595
-        if(current.node.id === "2287019228"){
-          console.log("")
-        }
-        if(current.node.id === "262892997" || current.node.id === "3659845144"){
-          console.log("")
-        }
-        if(current.node.id === "262892996" || current.node.id === "3928793758"){
-          console.log("")
-        }
-        if(current.node.id === "5043815480"){
-          console.log("")
-        }
-        if(current.node.id === "2287019214"){
-          console.log("")
-        }
-        if(current.node.id === "625256"){
-          console.log("")
-        }
-        if(current.node.id === "3840440576"){
-          console.log("")
-        }
-        if(current.node.id === "3840440595"){
-          console.log("")
-        }
-        if(current.node.id === "3840440610"){
-          console.log("")
-        }
-        if(current.node.id === "3840440602"){
-          console.log("")
-        }
   
       if (current.node.geohash === end.geohash) {
         let temp = current;
@@ -179,7 +151,8 @@ export class AStar {
         console.log("closedSet!", closedSet.length);
         // return the traced path
         return {
-          route
+          route,
+          current
         };
       }
   
@@ -188,14 +161,25 @@ export class AStar {
       //add current to closedSet
       closedSet.push(current);
   
+     
       let neighbors = current.node.pointsToNodeSimplified;
+
+       // 3378259472 mi je povezan ali speed je 6???...
+       // footway ima brzinu 31???
+       if(current.node.id === "3378259468"){
+        console.log("first")
+      }
       if(!neighbors) break;
 
       for (let i = 0; i < neighbors.length; i++) {
         const connection = neighbors[i]
-        if(!isForDriving(connection.way)){
-          continue
-        }
+        // const skipEdge = this.disabledEdges.get(`${current.node.geohash}-${connection.node.geohash}`) || this.disabledEdges.get(`${connection.node.geohash}-${current.node.geohash}`)
+        
+        // if(skipEdge) continue
+
+        // if(isForWalking(connection.way)){
+        //   continue
+        // }
         let neighbor = new SearchNode(neighbors[i].node);
   
         if (!closedSet.find(n => n.node.id === connection.nodeId)) {

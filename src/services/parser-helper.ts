@@ -167,7 +167,7 @@ export function speedTransformer(maxspeed: string | undefined, way: IOsmWay | un
   if(!maxspeed) return 
 
   if(way?.tags?.highway && isForWalking(way) && !isForDriving(way)) return 6
-  if(maxspeed === "walk") return 6
+  if(maxspeed === "walk" || way?.tags?.highway === "footway") return 6
 
   if(!maxspeed.includes(" ")) return Number(maxspeed)
 
