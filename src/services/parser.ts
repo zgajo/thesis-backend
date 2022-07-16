@@ -4,7 +4,7 @@ import { IOsmParsed } from "../types/osm-parser";
 import { IOsmNode, IOsmWay, TPointsToNode } from "../types/osm-read";
 import { GEOHASH_PRECISION } from "../utils/constants";
 import { _isPathOneWay, _isPathReversed } from "../utils/helper";
-import { isForWalking, isWayToNavigate, NodeHelper, speedTransformer, WayHelper } from "./parser-helper";
+import { isForDriving, isForWalking, isWayToNavigate, NodeHelper, speedTransformer, WayHelper } from "./parser-helper";
 import { ParserStorage } from "./parser-storage";
 
 function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase) {
@@ -304,7 +304,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       let maxspeed = speedTransformer(way.tags?.maxspeed, way);
 
       if (!maxspeed) {
-        if((way.tags?.highway === "footway")){
+        if(isForWalking(way) && !isForDriving(way)){
           maxspeed = 6
         }else {
           maxspeed = this.speeds[way.tags?.highway as string]?.speedAvg || this.averageSpeed;
