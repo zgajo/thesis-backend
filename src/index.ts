@@ -5,7 +5,7 @@ import handlebars from "handlebars";
 import path from "path";
 import { AStar } from "./graph/Astar";
 import { parserService } from "./parse";
-import { getNearestPoint } from "./services/nearest-point";
+import { ClosestPoint, getNearestPoint } from "./services/nearest-point";
 import { IOsmNode, IOsmWay, TPointsToNode } from "./types/osm-read";
 import { getMiddlePointForCurvedLine } from "./utils/leaflet";
 
@@ -39,7 +39,31 @@ server.get(
       currentPosition.lat = Number(request.query.lat);
       currentPosition.lon = Number(request.query.lon);
     }
-    const { closestPoint, mergedEdges, proximityBounds, locationBounds } = await getNearestPoint(currentPosition, precision, radius, parserService);
+    let closestPoint: ClosestPoint = {
+      id: "",
+      geohash: "",
+      distance: Infinity,
+      location: [0, 0],
+      pointsToGeohash: [],
+      pointsToNode: [],
+      distanceTo: [],
+      travelTimeTo: [],
+      highway: "",
+      speed: 0,
+      polyline: [],
+      way: undefined
+    }, mergedEdges: unknown, proximityBounds: unknown, locationBounds: unknown;
+    let retry = 1;
+
+    while(!closestPoint.id && retry < 4){
+      const nearest = await getNearestPoint(currentPosition, precision, Number(radius) * retry, parserService);
+      closestPoint = nearest.closestPoint
+      mergedEdges = nearest.mergedEdges
+      proximityBounds = nearest.proximityBounds
+      locationBounds = nearest.locationBounds
+      ++retry
+    }
+        
     const midpointLatLng = getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, closestPoint.location[0], closestPoint.location[1]);
 
     const startNode = parserService.nodes.highwayGeohash?.getNode("sp94hkqnqr") as IOsmNode;
@@ -91,13 +115,13 @@ server.get(
       locationBounds: JSON.stringify(locationBounds),
       proximityBounds: JSON.stringify(proximityBounds),
       edges: JSON.stringify(mergedEdges),
-      closestPoint: JSON.stringify(closestPoint.location),
+      ...(closestPoint.id ? { closestPoint: JSON.stringify(closestPoint.location)} : null),
       currentPosition: JSON.stringify([currentPosition.lat, currentPosition.lon]),
       midpointLatLng: JSON.stringify(midpointLatLng),
       radius,
-      route: JSON.stringify(route),
-      startRoutePoint: JSON.stringify([n.lat, n.lon]),
-      endRoutePoint: JSON.stringify([endNode.lat, endNode.lon]),
+      ...(route.length ? {route: JSON.stringify(route)} : null),
+      ...(n.id ? {startRoutePoint: JSON.stringify([n.lat, n.lon])} : null),
+      ...(endNode.id ? {endRoutePoint: JSON.stringify([endNode.lat, endNode.lon])} : null),
     });
   },
 );

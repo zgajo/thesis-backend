@@ -161,25 +161,16 @@ export class AStar {
       //add current to closedSet
       closedSet.push(current);
   
-     
       let neighbors = current.node.pointsToNodeSimplified;
 
-       // 3378259472 mi je povezan ali speed je 6???...
-       // footway ima brzinu 31???
-       if(current.node.id === "3378259656"){
+      if(current.node.id === "1386870606"){
         console.log("first")
       }
+
       if(!neighbors) break;
 
       for (let i = 0; i < neighbors.length; i++) {
         const connection = neighbors[i]
-        // const skipEdge = this.disabledEdges.get(`${current.node.geohash}-${connection.node.geohash}`) || this.disabledEdges.get(`${connection.node.geohash}-${current.node.geohash}`)
-        
-        // if(skipEdge) continue
-
-        // if(isForWalking(connection.way)){
-        //   continue
-        // }
 
         let neighbor = new SearchNode(neighbors[i].node);
   

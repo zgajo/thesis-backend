@@ -1,16 +1,16 @@
 <div id="mapid"></div>
 <script>  
   const currentPosition = JSON.parse("{{{currentPosition}}}")
-   const routes = JSON.parse("{{{route}}}")
+  const routes = "{{{route}}}" ? JSON.parse("{{{route}}}") : null
   const endPoint = JSON.parse("{{{endRoutePoint}}}")
-  const startingPoint = JSON.parse("{{{startRoutePoint}}}")
+  const startingPoint = "{{{startRoutePoint}}}" ? JSON.parse("{{{startRoutePoint}}}") : null
       // Andorra
-  var map = L.map("mapid").setView(startingPoint, 18);
+  var map = L.map("mapid").setView(startingPoint || currentPosition, 18);
 
   L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', {
-	maxZoom: 18,
-	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
 
   // Rovinj
   //- var map = L.map("mapid").setView([45.0808344, 13.6383927], 8)
@@ -19,38 +19,48 @@
   L.circle(currentPosition, {radius: "{{{radius}}}", color: "#EE4B2B"}).addTo(map);
 
   const locationBounds = JSON.parse("{{{locationBounds}}}");
-  L.rectangle(locationBounds).addTo(map);
+  if(locationBounds){
+    L.rectangle(locationBounds).addTo(map);
+  }
 
   const proximityBounds = JSON.parse("{{{proximityBounds}}}");
-  proximityBounds.forEach(bounds => L.rectangle(bounds).addTo(map))
+  if(proximityBounds){
+    proximityBounds.forEach(bounds => L.rectangle(bounds).addTo(map))
+  }
 
   {{!-- const edges = JSON.parse("{{{edges}}}");
   edges.forEach(edge => L.polyline(edge, {color: 'red'}).addTo(map)) --}}
 
-  const closest = JSON.parse("{{{closestPoint}}}")
-  L.circle(closest, {radius: 5, color: "#EE4B2B"}).addTo(map);
+  const closest ="{{{closestPoint}}}" ? JSON.parse("{{{closestPoint}}}") : null
+  if(closest) L.circle(closest, {radius: 5, color: "#EE4B2B"}).addTo(map);
 
-  routes.forEach(route => L.polyline(route, {color: 'red'}).addTo(map))
+  if(routes) routes.forEach(route => L.polyline(route, {color: 'red'}).addTo(map))
 
-  var startMarker = new L.marker(startingPoint); //opacity may be set to zero
-  startMarker.bindTooltip("Start point", {permanent: true }).openPopup();
-  startMarker.addTo(map);
+  if(startingPoint){
+    var startMarker = new L.marker(startingPoint); //opacity may be set to zero
+    startMarker.bindTooltip("Start point", {permanent: true }).openPopup();
+    startMarker.addTo(map);
+  }
 
-  var endMarker = new L.marker(endPoint); //opacity may be set to zero
-  endMarker.bindTooltip("End point", {permanent: true }).openPopup();
-  endMarker.addTo(map);
+  if(endPoint){
+    var endMarker = new L.marker(endPoint); //opacity may be set to zero
+    endMarker.bindTooltip("End point", {permanent: true }).openPopup();
+    endMarker.addTo(map);
+  }
 
   const midpointLatLng = JSON.parse("{{{midpointLatLng}}}")
-    L.curve(
-    [
-      'M', currentPosition,
-      'Q', midpointLatLng,
-        closest
-    ], {
-    color: 'rgba(255,255,255,0.5)',
-    weight: 5,
-    dashArray: '8, 8', dashOffset: '8'
-  }).addTo(map);
+  if(midpointLatLng && currentPosition && closest){
+      L.curve(
+      [
+        'M', currentPosition,
+        'Q', midpointLatLng,
+          closest
+      ], {
+      color: 'rgba(255,255,255,0.5)',
+      weight: 5,
+      dashArray: '8, 8', dashOffset: '8'
+    }).addTo(map);
+  }
 
   map.on('click', function(e) {
     const params = new Proxy(new URLSearchParams(window.location.search), {

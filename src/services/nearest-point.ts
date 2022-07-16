@@ -8,13 +8,28 @@ import { Parser } from "./parser";
 import { _isPathOneWay } from "../utils/helper";
 import { haversine } from "../graph/Astar";
 
+export interface ClosestPoint {
+  id: string;
+  geohash: string;
+  distance: number;
+  location: [number, number];
+  pointsToGeohash: string[];
+  pointsToNode: IOsmNode[];
+  polyline: string[];
+  distanceTo: number[];
+  travelTimeTo: number[];
+  highway: string;
+  speed: number;
+  way: IOsmWay | undefined;
+}
+
 export const getNearestPoint = async (
   currentPosition: {
     lat: number;
     lon: number;
   },
   precision: number,
-  radius: string | 1000,
+  radius: number,
   parserService: InstanceType<typeof Parser>,
 ) => {
   // using this to show geohash box on the map
@@ -43,20 +58,7 @@ export const getNearestPoint = async (
     }),
   );
 
-  let closestPoint: {
-    id: string;
-    geohash: string;
-    distance: number;
-    location: [number, number];
-    pointsToGeohash: string[];
-    pointsToNode: IOsmNode[];
-    polyline: string[];
-    distanceTo: number[];
-    travelTimeTo: number[];
-    highway: string;
-    speed: number;
-    way: IOsmWay | undefined;
-  } = {
+  let closestPoint: ClosestPoint = {
     id: "",
     geohash: "",
     distance: Infinity,
