@@ -166,7 +166,7 @@ export class AStar {
 
        // 3378259472 mi je povezan ali speed je 6???...
        // footway ima brzinu 31???
-       if(current.node.id === "3378259468"){
+       if(current.node.id === "3378259656"){
         console.log("first")
       }
       if(!neighbors) break;
@@ -180,6 +180,7 @@ export class AStar {
         // if(isForWalking(connection.way)){
         //   continue
         // }
+
         let neighbor = new SearchNode(neighbors[i].node);
   
         if (!closedSet.find(n => n.node.id === connection.nodeId)) {
@@ -189,7 +190,9 @@ export class AStar {
           }
           let possibleG = current.gScore + (connection.travelTime as number) + penalty;
   
-          if (!openSet.find(n => n.node.id === connection.nodeId)) {
+          const neighbourghInOpenSet = openSet.find(n => n.node.id === connection.nodeId)
+          if(neighbourghInOpenSet) neighbor = neighbourghInOpenSet
+          if (!neighbourghInOpenSet) {
             openSet.push(neighbor);
           } else if (possibleG >= neighbor.gScore) {
             continue;
