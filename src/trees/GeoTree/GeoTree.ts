@@ -171,7 +171,6 @@ export class GeoTree<T> {
     }
 
     return nodes;
-    console.log(precision);
   }
 
   getAllNodesByBox(box: GeoTreeBox<T>) {

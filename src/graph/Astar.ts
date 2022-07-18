@@ -163,10 +163,6 @@ export class AStar {
   
       let neighbors = current.node.pointsToNodeSimplified;
 
-      if(current.node.id === "1386870606"){
-        console.log("first")
-      }
-
       if(!neighbors) break;
 
       for (let i = 0; i < neighbors.length; i++) {

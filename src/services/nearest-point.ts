@@ -31,6 +31,7 @@ export const getNearestPoint = async (
   precision: number,
   radius: number,
   parserService: InstanceType<typeof Parser>,
+  allClosestPoints: ClosestPoint[],
 ) => {
   // using this to show geohash box on the map
   const hash = ngeohash.encode(currentPosition.lat, currentPosition.lon, precision);
@@ -70,7 +71,7 @@ export const getNearestPoint = async (
     highway: "",
     speed: 0,
     polyline: [],
-    way: undefined
+    way: undefined,
   };
 
   const mergedEdges = ([] as IOsmNode[]).concat.apply([], allEdges).map(node => {
@@ -90,53 +91,64 @@ export const getNearestPoint = async (
           closestPoint.location = [calculation.point.lat, calculation.point.lon];
           closestPoint.highway = pointsToNode.highway;
           closestPoint.speed = pointsToNode.speed as number;
-          closestPoint.way = pointsToNode.way
+          closestPoint.way = pointsToNode.way;
 
           const geohash = ngeohash.encode(calculation.point.lat, calculation.point.lon, precision);
-          closestPoint.id = geohash
-          closestPoint.geohash = geohash
+          closestPoint.id = geohash;
+          closestPoint.geohash = geohash;
           closestPoint.pointsToGeohash = [pointsToNode.node.geohash as string];
 
-          const edgesFromStartToX = edges.slice(0, i)
-          const edgesFromYToEnd = edges.slice(i)
+          const edgesFromStartToX = edges.slice(0, i);
+          const edgesFromYToEnd = edges.slice(i);
           // add closest point to both arrays
-          edgesFromStartToX.push([...closestPoint.location])
-          edgesFromYToEnd.unshift([...closestPoint.location])
+          edgesFromStartToX.push([...closestPoint.location]);
+          edgesFromYToEnd.unshift([...closestPoint.location]);
 
-          let startToClosestDistance = 0
-          let closestToEndDistance = 0
+          let startToClosestDistance = 0;
+          let closestToEndDistance = 0;
           // calculate distance between start and to closestPoint
           for (let index = 1; index < edgesFromStartToX.length; index++) {
             const previousCords = edgesFromStartToX[index - 1];
             const currentCords = edgesFromStartToX[index];
-            
-            startToClosestDistance += haversine({lat: previousCords[0], lon: previousCords[1]}, {lat: currentCords[0], lon: currentCords[1]})
+
+            startToClosestDistance += haversine({ lat: previousCords[0], lon: previousCords[1] }, { lat: currentCords[0], lon: currentCords[1] });
           }
-          
-          const startToClosestTravelTime = calculateTravelTime(closestPoint.speed, startToClosestDistance)
-          
+
+          const startToClosestTravelTime = calculateTravelTime(closestPoint.speed, startToClosestDistance);
+
           // calculate distance between closestPoint and next node
           for (let index = 1; index < edgesFromYToEnd.length; index++) {
             const previousCords = edgesFromYToEnd[index - 1];
             const currentCords = edgesFromYToEnd[index];
-            
-            closestToEndDistance += haversine({lat: previousCords[0], lon: previousCords[1]}, {lat: currentCords[0], lon: currentCords[1]})
+
+            closestToEndDistance += haversine({ lat: previousCords[0], lon: previousCords[1] }, { lat: currentCords[0], lon: currentCords[1] });
           }
 
-          const closestToEndTravelTime = calculateTravelTime(closestPoint.speed as number, closestToEndDistance)
+          const closestToEndTravelTime = calculateTravelTime(closestPoint.speed as number, closestToEndDistance);
 
           closestPoint.distanceTo = [closestToEndDistance];
-          closestPoint.travelTimeTo = [closestToEndTravelTime]
-          closestPoint.polyline = [JSON.stringify(edgesFromYToEnd)]
-          closestPoint.pointsToNode = [pointsToNode.node] 
-          
+          closestPoint.travelTimeTo = [closestToEndTravelTime];
+          closestPoint.polyline = [JSON.stringify(edgesFromYToEnd)];
+          closestPoint.pointsToNode = [pointsToNode.node];
+
           const isOneWay = _isPathOneWay(pointsToNode.way);
           if (!isOneWay) {
-            closestPoint.distanceTo.push(startToClosestDistance)
+            closestPoint.distanceTo.push(startToClosestDistance);
             closestPoint.travelTimeTo.push(startToClosestTravelTime);
             closestPoint.pointsToGeohash.push(node.geohash as string);
-            closestPoint.polyline.push(JSON.stringify(edgesFromStartToX))
-            closestPoint.pointsToNode.push(node)
+            closestPoint.polyline.push(JSON.stringify(edgesFromStartToX));
+            closestPoint.pointsToNode.push(node);
+          }
+
+          const insideIndex = allClosestPoints.findIndex(cp => cp.way?.id === pointsToNode.way.id);
+          const inside = allClosestPoints[insideIndex];
+          if (insideIndex >= 0) {
+            if (inside.way?.id === closestPoint.way.id && inside.distance > closestPoint.distance) {
+              allClosestPoints.splice(insideIndex, 1)
+              allClosestPoints.unshift({ ...closestPoint });
+            }
+          } else {
+            allClosestPoints.unshift({ ...closestPoint });
           }
         }
       }

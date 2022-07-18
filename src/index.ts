@@ -54,18 +54,18 @@ server.get(
       way: undefined
     }, mergedEdges: unknown, proximityBounds: unknown, locationBounds: unknown;
     let retry = 1;
+    const allClosestPoints: ClosestPoint[] = []
 
-    while(!closestPoint.id && retry < 4){
-      const nearest = await getNearestPoint(currentPosition, precision, Number(radius) * retry, parserService);
+    while(allClosestPoints.length < 5 && retry < 10){
+      const nearest = await getNearestPoint(currentPosition, precision, Number(radius) * retry, parserService, allClosestPoints);
       closestPoint = nearest.closestPoint
       mergedEdges = nearest.mergedEdges
       proximityBounds = nearest.proximityBounds
       locationBounds = nearest.locationBounds
       ++retry
+      // do a astar search straight away.... if there are less then 3 routes, then continue with while
     }
         
-    const midpointLatLng = getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, closestPoint.location[0], closestPoint.location[1]);
-
     const startNode = parserService.nodes.highwayGeohash?.getNode("sp94hkqnqr") as IOsmNode;
     const endNode = parserService.nodes.highwayGeohash?.getNode("sp94hkcn0m") as IOsmNode;
     const start = parserService.nodes.highwaySimplified?.get("53276381");
@@ -79,36 +79,43 @@ server.get(
     // "sp94hmhb0j" - 2287019228 - 42.5665582, 1.5995507
     // "sp94hkuvtz" - 53275040 - 42.5661390, 1.5997895
 
-    const astar = new AStar(parserService.averageSpeed);
+    const routes = await Promise.all(allClosestPoints.map(cp => {
+      const midpointLatLng = getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, cp.location[0], cp.location[1]);
 
-    if (closestPoint.pointsToGeohash.length > 1) {
-      astar.addDisabledEdge(closestPoint.pointsToGeohash[0], closestPoint.pointsToGeohash[1]);
-      astar.addDisabledEdge(closestPoint.pointsToGeohash[1], closestPoint.pointsToGeohash[0]);
-    }
+      const astar = new AStar(parserService.averageSpeed);
 
-    const n: IOsmNode = {
-      id: closestPoint.id,
-      geohash: closestPoint.geohash,
-      lat: closestPoint.location[0],
-      lon: closestPoint.location[1],
-      type: "node",
-      pointsToNodeSimplified: closestPoint.distanceTo.map((distance, index) => {
-        const connection: TPointsToNode = {
-          distance,
-          highway: closestPoint.highway,
-          node: closestPoint.pointsToNode[index],
-          nodeId: closestPoint.pointsToNode[index].id,
-          polyline: closestPoint.polyline[index],
-          speed: closestPoint.speed,
-          travelTime: closestPoint.travelTimeTo[index],
-          way: closestPoint.way as IOsmWay,
-        };
+      if (cp.pointsToGeohash.length > 1) {
+        astar.addDisabledEdge(cp.pointsToGeohash[0], cp.pointsToGeohash[1]);
+        astar.addDisabledEdge(cp.pointsToGeohash[1], cp.pointsToGeohash[0]);
+      }
+  
+      const n: IOsmNode = {
+        id: cp.id,
+        geohash: cp.geohash,
+        lat: cp.location[0],
+        lon: cp.location[1],
+        type: "node",
+        pointsToNodeSimplified: cp.distanceTo.map((distance, index) => {
+          const connection: TPointsToNode = {
+            distance,
+            highway: cp.highway,
+            node: cp.pointsToNode[index],
+            nodeId: cp.pointsToNode[index].id,
+            polyline: cp.polyline[index],
+            speed: cp.speed,
+            travelTime: cp.travelTimeTo[index],
+            way: cp.way as IOsmWay,
+          };
+  
+          return connection;
+        }),
+      };
+  
+      const { route, current } = astar.search(n, endNode);
+      return {route, startRoutePoint: [n.lat, n.lon], closestPoint: cp.location, midpointLatLng}
+    }))
 
-        return connection;
-      }),
-    };
-
-    const { route, current } = astar.search(n, endNode);
+    
 
     return reply.view("/templates/index.hbs", {
       text: "malo",
@@ -117,10 +124,11 @@ server.get(
       edges: JSON.stringify(mergedEdges),
       ...(closestPoint.id ? { closestPoint: JSON.stringify(closestPoint.location)} : null),
       currentPosition: JSON.stringify([currentPosition.lat, currentPosition.lon]),
-      midpointLatLng: JSON.stringify(midpointLatLng),
+      // midpointLatLng: JSON.stringify(midpointLatLng),
       radius,
-      ...(route.length ? {route: JSON.stringify(route)} : null),
-      ...(n.id ? {startRoutePoint: JSON.stringify([n.lat, n.lon])} : null),
+      routes: routes.length ? JSON.stringify(routes) : [],
+      // ...(route.length ? {route: JSON.stringify(route)} : null),
+      // ...(n.id ? {startRoutePoint: JSON.stringify([n.lat, n.lon])} : null),
       ...(endNode.id ? {endRoutePoint: JSON.stringify([endNode.lat, endNode.lon])} : null),
     });
   },

@@ -1,11 +1,11 @@
 <div id="mapid"></div>
 <script>  
   const currentPosition = JSON.parse("{{{currentPosition}}}")
-  const routes = "{{{route}}}" ? JSON.parse("{{{route}}}") : null
+  const routes = {{{routes}}}
+  console.log(routes)
   const endPoint = JSON.parse("{{{endRoutePoint}}}")
-  const startingPoint = "{{{startRoutePoint}}}" ? JSON.parse("{{{startRoutePoint}}}") : null
       // Andorra
-  var map = L.map("mapid").setView(startingPoint || currentPosition, 18);
+      var map = L.map("mapid").setView(currentPosition, 18);
 
   L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -31,36 +31,43 @@
   {{!-- const edges = JSON.parse("{{{edges}}}");
   edges.forEach(edge => L.polyline(edge, {color: 'red'}).addTo(map)) --}}
 
-  const closest ="{{{closestPoint}}}" ? JSON.parse("{{{closestPoint}}}") : null
-  if(closest) L.circle(closest, {radius: 5, color: "#EE4B2B"}).addTo(map);
+  routes.forEach(current => {
+    if(current.route.length){
+      const closest = current.closestPoint
+      if(closest) L.circle(closest, {radius: 5, color: "#EE4B2B"}).addTo(map);
 
-  if(routes) routes.forEach(route => L.polyline(route, {color: 'red'}).addTo(map))
+      if(current.route) current.route.forEach(route => L.polyline(route, {color: 'red'}).addTo(map))
 
-  if(startingPoint){
-    var startMarker = new L.marker(startingPoint); //opacity may be set to zero
-    startMarker.bindTooltip("Start point", {permanent: true }).openPopup();
-    startMarker.addTo(map);
-  }
+      const startingPoint = current.startRoutePoint
 
-  if(endPoint){
-    var endMarker = new L.marker(endPoint); //opacity may be set to zero
-    endMarker.bindTooltip("End point", {permanent: true }).openPopup();
-    endMarker.addTo(map);
-  }
+      if(current.startingPoint){
+        var startMarker = new L.marker(startingPoint); //opacity may be set to zero
+        startMarker.bindTooltip("Start point", {permanent: true }).openPopup();
+        startMarker.addTo(map);
+      }
 
-  const midpointLatLng = JSON.parse("{{{midpointLatLng}}}")
-  if(midpointLatLng && currentPosition && closest){
-      L.curve(
-      [
-        'M', currentPosition,
-        'Q', midpointLatLng,
-          closest
-      ], {
-      color: 'rgba(255,255,255,0.5)',
-      weight: 5,
-      dashArray: '8, 8', dashOffset: '8'
-    }).addTo(map);
-  }
+      if(endPoint){
+        var endMarker = new L.marker(endPoint); //opacity may be set to zero
+        endMarker.bindTooltip("End point", {permanent: true }).openPopup();
+        endMarker.addTo(map);
+      }
+
+      const midpointLatLng = current.midpointLatLng
+      if(midpointLatLng && currentPosition && closest){
+          L.curve(
+          [
+            'M', currentPosition,
+            'Q', midpointLatLng,
+              closest
+          ], {
+          color: 'rgba(255,255,255,0.5)',
+          weight: 5,
+          dashArray: '8, 8', dashOffset: '8'
+        }).addTo(map);
+      }
+    }
+  })
+  
 
   map.on('click', function(e) {
     const params = new Proxy(new URLSearchParams(window.location.search), {
