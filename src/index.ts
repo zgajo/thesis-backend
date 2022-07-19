@@ -40,32 +40,36 @@ server.get(
       currentPosition.lon = Number(request.query.lon);
     }
     let closestPoint: ClosestPoint = {
-      id: "",
-      geohash: "",
-      distance: Infinity,
-      location: [0, 0],
-      pointsToGeohash: [],
-      pointsToNode: [],
-      distanceTo: [],
-      travelTimeTo: [],
-      highway: "",
-      speed: 0,
-      polyline: [],
-      way: undefined
-    }, mergedEdges: unknown, proximityBounds: unknown, locationBounds: unknown;
+        id: "",
+        geohash: "",
+        distance: Infinity,
+        travelTime: Infinity,
+        location: [0, 0],
+        pointsToGeohash: [],
+        pointsToNode: [],
+        distanceTo: [],
+        travelTimeTo: [],
+        highway: "",
+        speed: 0,
+        polyline: [],
+        way: undefined,
+      },
+      mergedEdges: unknown,
+      proximityBounds: unknown,
+      locationBounds: unknown;
     let retry = 1;
-    const allClosestPoints: ClosestPoint[] = []
+    const allClosestPoints: ClosestPoint[] = [];
 
-    while(allClosestPoints.length < 5 && retry < 10){
+    while (allClosestPoints.length < 5 && retry < 10) {
       const nearest = await getNearestPoint(currentPosition, precision, Number(radius) * retry, parserService, allClosestPoints);
-      closestPoint = nearest.closestPoint
-      mergedEdges = nearest.mergedEdges
-      proximityBounds = nearest.proximityBounds
-      locationBounds = nearest.locationBounds
-      ++retry
+      closestPoint = nearest.closestPoint;
+      mergedEdges = nearest.mergedEdges;
+      proximityBounds = nearest.proximityBounds;
+      locationBounds = nearest.locationBounds;
+      ++retry;
       // do a astar search straight away.... if there are less then 3 routes, then continue with while
     }
-        
+
     const startNode = parserService.nodes.highwayGeohash?.getNode("sp94hkqnqr") as IOsmNode;
     const endNode = parserService.nodes.highwayGeohash?.getNode("sp94hkcn0m") as IOsmNode;
     const start = parserService.nodes.highwaySimplified?.get("53276381");
@@ -79,57 +83,70 @@ server.get(
     // "sp94hmhb0j" - 2287019228 - 42.5665582, 1.5995507
     // "sp94hkuvtz" - 53275040 - 42.5661390, 1.5997895
 
-    const routes = await Promise.all(allClosestPoints.map(cp => {
-      const midpointLatLng = getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, cp.location[0], cp.location[1]);
+    const routes = await Promise.all(
+      allClosestPoints.map(cp => {
+        const midpointLatLng = getMiddlePointForCurvedLine(currentPosition.lat, currentPosition.lon, cp.location[0], cp.location[1]);
 
-      const astar = new AStar(parserService.averageSpeed);
+        const astar = new AStar(parserService.averageSpeed);
 
-      if (cp.pointsToGeohash.length > 1) {
-        astar.addDisabledEdge(cp.pointsToGeohash[0], cp.pointsToGeohash[1]);
-        astar.addDisabledEdge(cp.pointsToGeohash[1], cp.pointsToGeohash[0]);
-      }
-  
-      const n: IOsmNode = {
-        id: cp.id,
-        geohash: cp.geohash,
-        lat: cp.location[0],
-        lon: cp.location[1],
-        type: "node",
-        pointsToNodeSimplified: cp.distanceTo.map((distance, index) => {
-          const connection: TPointsToNode = {
-            distance,
-            highway: cp.highway,
-            node: cp.pointsToNode[index],
-            nodeId: cp.pointsToNode[index].id,
-            polyline: cp.polyline[index],
-            speed: cp.speed,
-            travelTime: cp.travelTimeTo[index],
-            way: cp.way as IOsmWay,
-          };
-  
-          return connection;
-        }),
-      };
-  
-      const { route, current } = astar.search(n, endNode);
-      return {route, startRoutePoint: [n.lat, n.lon], closestPoint: cp.location, midpointLatLng}
-    }))
+        if (cp.pointsToGeohash.length > 1) {
+          astar.addDisabledEdge(cp.pointsToGeohash[0], cp.pointsToGeohash[1]);
+          astar.addDisabledEdge(cp.pointsToGeohash[1], cp.pointsToGeohash[0]);
+        }
 
-    
+        const n: IOsmNode = {
+          id: cp.id,
+          geohash: cp.geohash,
+          lat: cp.location[0],
+          lon: cp.location[1],
+          type: "node",
+          pointsToNodeSimplified: cp.distanceTo.map((distance, index) => {
+            const connection: TPointsToNode = {
+              distance,
+              highway: cp.highway,
+              node: cp.pointsToNode[index],
+              nodeId: cp.pointsToNode[index].id,
+              polyline: cp.polyline[index],
+              speed: cp.speed,
+              travelTime: cp.travelTimeTo[index],
+              way: cp.way as IOsmWay,
+            };
+
+            return connection;
+          }),
+        };
+
+        const { route, current, distance, travelTime } = astar.search(n, endNode);
+
+        const toReturn = {
+          route,
+          startRoutePoint: [n.lat, n.lon],
+          closestPoint: cp.location,
+          midpointLatLng,
+          distance,
+          travelTime,
+          distanceToClosest: cp.distance,
+          travelTimeToClosest: cp.travelTime,
+        };
+        if (cp.distance && toReturn.distance) toReturn.distance += cp.distance;
+        if (travelTime && toReturn.travelTime) toReturn.travelTime += cp.travelTime;
+        return toReturn;
+      }),
+    );
 
     return reply.view("/templates/index.hbs", {
       text: "malo",
       locationBounds: JSON.stringify(locationBounds),
       proximityBounds: JSON.stringify(proximityBounds),
       edges: JSON.stringify(mergedEdges),
-      ...(closestPoint.id ? { closestPoint: JSON.stringify(closestPoint.location)} : null),
+      ...(closestPoint.id ? { closestPoint: JSON.stringify(closestPoint.location) } : null),
       currentPosition: JSON.stringify([currentPosition.lat, currentPosition.lon]),
       // midpointLatLng: JSON.stringify(midpointLatLng),
       radius,
       routes: routes.length ? JSON.stringify(routes) : [],
       // ...(route.length ? {route: JSON.stringify(route)} : null),
       // ...(n.id ? {startRoutePoint: JSON.stringify([n.lat, n.lon])} : null),
-      ...(endNode.id ? {endRoutePoint: JSON.stringify([endNode.lat, endNode.lon])} : null),
+      ...(endNode.id ? { endRoutePoint: JSON.stringify([endNode.lat, endNode.lon]) } : null),
     });
   },
 );

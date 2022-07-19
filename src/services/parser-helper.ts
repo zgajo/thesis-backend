@@ -75,7 +75,7 @@ const highwaysNotForDriving = [
   "steps",
   "track",
 ];
-const servicesNotForDriving = ["alley", "driveway", "emergency_access", "parking", "parking_aisle", "private"];
+const servicesNotForDriving = ["alley", "driveway", "emergency_access", "parking", "parking_aisle", "private", "path"];
 const highwaysNotForWalking = ["abandoned", "bus_guideway", "construction", "cycleway", "motor", "planned", "platform", "proposed", "raceway"];
 const highwaysNotForBike = [
   "abandoned",

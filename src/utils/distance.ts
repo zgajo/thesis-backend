@@ -53,12 +53,14 @@ export function pDistance(x: number, y: number, x1: number, y1: number, x2: numb
 
   var dx = x - xx;
   var dy = y - yy;
+  const distance = greatCircleVec(x, y, xx, yy)
   return {
     point: {
       lat: xx,
       lon: yy,
     },
-    distance: Math.sqrt(dx * dx + dy * dy),
+    distance,
+    travelTime: calculateTravelTime(6, distance)
   };
 }
 

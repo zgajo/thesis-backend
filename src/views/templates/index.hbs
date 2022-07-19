@@ -5,7 +5,7 @@
   console.log(routes)
   const endPoint = JSON.parse("{{{endRoutePoint}}}")
       // Andorra
-      var map = L.map("mapid").setView(currentPosition, 18);
+      const map = L.map("mapid").setView(currentPosition, 18);
 
   L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -13,7 +13,7 @@
   }).addTo(map);
 
   // Rovinj
-  //- var map = L.map("mapid").setView([45.0808344, 13.6383927], 8)
+  //- const map = L.map("mapid").setView([45.0808344, 13.6383927], 8)
  
 
   L.circle(currentPosition, {radius: "{{{radius}}}", color: "#EE4B2B"}).addTo(map);
@@ -39,31 +39,58 @@
       if(current.route) current.route.forEach(route => L.polyline(route, {color: 'red'}).addTo(map))
 
       const startingPoint = current.startRoutePoint
-
-      if(current.startingPoint){
-        var startMarker = new L.marker(startingPoint); //opacity may be set to zero
-        startMarker.bindTooltip("Start point", {permanent: true }).openPopup();
+      if(startingPoint){
+        const startMarker = new L.marker(startingPoint); //opacity may be set to zero
+        startMarker.bindPopup(`
+        <div>Start Point</div>
+        <div>location: ${startingPoint}</div>
+        <div>distance (km): ${current.distance/1000}</div>
+        <div>travel time (minutes): ${Math.round(current.travelTime/60)}</div>
+        `, {permanent: true }).openPopup();
         startMarker.addTo(map);
       }
 
       if(endPoint){
-        var endMarker = new L.marker(endPoint); //opacity may be set to zero
+        const endMarker = new L.marker(endPoint); //opacity may be set to zero
         endMarker.bindTooltip("End point", {permanent: true }).openPopup();
         endMarker.addTo(map);
       }
 
       const midpointLatLng = current.midpointLatLng
       if(midpointLatLng && currentPosition && closest){
-          L.curve(
-          [
-            'M', currentPosition,
-            'Q', midpointLatLng,
-              closest
-          ], {
-          color: 'rgba(255,255,255,0.5)',
-          weight: 5,
-          dashArray: '8, 8', dashOffset: '8'
-        }).addTo(map);
+        const curve = L.curve(
+            [
+              'M', currentPosition,
+              'Q', midpointLatLng,
+                closest
+            ], {
+            color: 'rgba(255,255,255,0.5)',
+            weight: 5,
+            dashArray: '8, 8', dashOffset: '8'
+          })
+
+        curve.addTo(map);
+
+        const midCurveLocation = curve.trace([0.5])[0]
+        console.log("curve", midCurveLocation)
+
+        const toClosestMarker = new L.marker([midCurveLocation.lat,midCurveLocation.lng]); //opacity may be set to zero
+        toClosestMarker.bindPopup(`
+        <div>To closest</div>
+        <div>distance (km): ${current.distanceToClosest/1000}</div>
+        <div>travel time (seconds): ${current.travelTimeToClosest}</div>
+        <div>travel time (minutes): ${Math.round(current.travelTimeToClosest/60)}</div>
+        `, {permanent: true }).openPopup();
+        toClosestMarker.addTo(map);
+        
+        {{!-- toClosestMarker.bindTooltip(`
+        <div>To closest</div>
+        <div>distance (km): ${current.distanceToClosest/1000}</div>
+        <div>travel time (seconds): ${current.travelTimeToClosest}</div>
+        <div>travel time (minutes): ${Math.round(current.travelTimeToClosest/60)}</div>
+        `, {permanent: true }).openPopup();
+        toClosestMarker.addTo(map); --}}
+          
       }
     }
   })

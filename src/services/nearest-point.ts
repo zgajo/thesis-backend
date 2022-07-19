@@ -12,6 +12,7 @@ export interface ClosestPoint {
   id: string;
   geohash: string;
   distance: number;
+  travelTime: number;
   location: [number, number];
   pointsToGeohash: string[];
   pointsToNode: IOsmNode[];
@@ -63,6 +64,7 @@ export const getNearestPoint = async (
     id: "",
     geohash: "",
     distance: Infinity,
+    travelTime: Infinity,
     location: [0, 0],
     pointsToGeohash: [],
     pointsToNode: [],
@@ -88,6 +90,7 @@ export const getNearestPoint = async (
 
         if (calculation.distance < closestPoint?.distance) {
           closestPoint.distance = calculation.distance;
+          closestPoint.travelTime = calculation.travelTime;
           closestPoint.location = [calculation.point.lat, calculation.point.lon];
           closestPoint.highway = pointsToNode.highway;
           closestPoint.speed = pointsToNode.speed as number;

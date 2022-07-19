@@ -49,12 +49,16 @@ export class SearchNode {
   visited: boolean;
   closed: boolean;
   highway?: string;
+  distance: number;
+  travelTime: number;
   polyline?: [number, number][];
 
   constructor(node: IOsmNode) {
     this.gScore = 0;
     this.fScore = 0;
     this.hScore = 0;
+    this.distance = 0;
+    this.travelTime = 0;
     this.node = node;
     this.previous = null;
     this.visited = false;
@@ -62,52 +66,6 @@ export class SearchNode {
   }
 }
 
-function removeFromArray(arr: SearchNode[], el: IOsmNode) {
-  for (let i = arr.length - 1; i >= 0; i--) {
-    if (arr[i].node == el) {
-      arr.splice(i, 1);
-    }
-  }
-
-  return arr;
-}
-
-class PriorityQueue {
-  private queue: SearchNode[];
-  constructor() {
-    this.queue = [];
-  }
-
-  add(node: SearchNode) {
-    this.queue.push(node);
-    this.queue.sort((a, b) => {
-      if (a.fScore < b.fScore) return -1;
-      else if (a.fScore > b.fScore) return 1;
-      return 0;
-    });
-  }
-
-  dequeue() {
-    const first = this.queue.shift();
-    return first;
-  }
-
-  isEmpty() {
-    return this.queue.length;
-  }
-
-  find(searchNode: TPointsToNode) {
-    return this.queue.find(sn => {
-      if (sn.node.geohash === searchNode.node.geohash) {
-        return sn;
-      }
-    });
-  }
-
-  get size() {
-    return this.queue.length;
-  }
-}
 export class AStar {
   private avgSpeed: number;
   private disabledEdges: Map<string, boolean>;
@@ -139,11 +97,15 @@ export class AStar {
         let temp = current;
         path.push(temp);
         let route: [number, number][][] = []
+        let distance = 0
+        let travelTime = 0
         while (temp.previous) {
           path.push(temp.previous);
           if(temp.polyline){
             route.push(temp.polyline)
           }
+          travelTime += temp.travelTime
+          distance += temp.distance
           temp = temp.previous;
         }
         console.log("DONE!");
@@ -152,7 +114,9 @@ export class AStar {
         // return the traced path
         return {
           route,
-          current
+          current,
+          distance,
+          travelTime
         };
       }
   
@@ -192,6 +156,8 @@ export class AStar {
           neighbor.previous = current;
           neighbor.polyline = connection.polyline ? JSON.parse(connection.polyline) : [];
           neighbor.highway = connection.highway;
+          neighbor.distance = connection.distance as number
+          neighbor.travelTime = connection.travelTime as number
         }
       }
 
