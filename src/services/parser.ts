@@ -210,7 +210,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       polyline: string[],
     ) {
       const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
-      const nextNodeGeohahs = geohash.encode(nextNode.lat, nextNode.lon)
+      const nextNodeGeohahs = geohash.encode(nextNode.lat, nextNode.lon, GEOHASH_PRECISION)
       polyline.push(nextNodeGeohahs);
       distance += haversine(previousNode, nextNode);
 
