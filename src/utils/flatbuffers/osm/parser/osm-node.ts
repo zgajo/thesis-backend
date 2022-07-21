@@ -78,30 +78,72 @@ distanceArray():Float64Array|null {
   return offset ? new Float64Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
 }
 
-travelTime(index: number):number|null {
+speed(index: number):number|null {
   const offset = this.bb!.__offset(this.bb_pos, 14);
-  return offset ? this.bb!.readFloat64(this.bb!.__vector(this.bb_pos + offset) + index * 8) : 0;
+  return offset ? this.bb!.readInt16(this.bb!.__vector(this.bb_pos + offset) + index * 2) : 0;
 }
 
-travelTimeLength():number {
+speedLength():number {
   const offset = this.bb!.__offset(this.bb_pos, 14);
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
-travelTimeArray():Float64Array|null {
+speedArray():Int16Array|null {
   const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? new Int16Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
+}
+
+travelTime(index: number):number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? this.bb!.readFloat64(this.bb!.__vector(this.bb_pos + offset) + index * 8) : 0;
+}
+
+travelTimeLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+travelTimeArray():Float64Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
   return offset ? new Float64Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
+}
+
+oneWay(index: number):boolean|null {
+  const offset = this.bb!.__offset(this.bb_pos, 18);
+  return offset ? !!this.bb!.readInt8(this.bb!.__vector(this.bb_pos + offset) + index) : false;
+}
+
+oneWayLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 18);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+oneWayArray():Int8Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 18);
+  return offset ? new Int8Array(this.bb!.bytes().buffer, this.bb!.bytes().byteOffset + this.bb!.__vector(this.bb_pos + offset), this.bb!.__vector_len(this.bb_pos + offset)) : null;
+}
+
+way(index: number):string
+way(index: number,optionalEncoding:flatbuffers.Encoding):string|Uint8Array
+way(index: number,optionalEncoding?:any):string|Uint8Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 20);
+  return offset ? this.bb!.__string(this.bb!.__vector(this.bb_pos + offset) + index * 4, optionalEncoding) : null;
+}
+
+wayLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 20);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
 tags():string|null
 tags(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
 tags(optionalEncoding?:any):string|Uint8Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 16);
+  const offset = this.bb!.__offset(this.bb_pos, 22);
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
 static startOsmNode(builder:flatbuffers.Builder) {
-  builder.startObject(7);
+  builder.startObject(10);
 }
 
 static addId(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset) {
@@ -177,8 +219,29 @@ static startDistanceVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(8, numElems, 8);
 }
 
+static addSpeed(builder:flatbuffers.Builder, speedOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(5, speedOffset, 0);
+}
+
+static createSpeedVector(builder:flatbuffers.Builder, data:number[]|Int16Array):flatbuffers.Offset;
+/**
+ * @deprecated This Uint8Array overload will be removed in the future.
+ */
+static createSpeedVector(builder:flatbuffers.Builder, data:number[]|Uint8Array):flatbuffers.Offset;
+static createSpeedVector(builder:flatbuffers.Builder, data:number[]|Int16Array|Uint8Array):flatbuffers.Offset {
+  builder.startVector(2, data.length, 2);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addInt16(data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startSpeedVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(2, numElems, 2);
+}
+
 static addTravelTime(builder:flatbuffers.Builder, travelTimeOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(5, travelTimeOffset, 0);
+  builder.addFieldOffset(6, travelTimeOffset, 0);
 }
 
 static createTravelTimeVector(builder:flatbuffers.Builder, data:number[]|Float64Array):flatbuffers.Offset;
@@ -198,8 +261,40 @@ static startTravelTimeVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(8, numElems, 8);
 }
 
+static addOneWay(builder:flatbuffers.Builder, oneWayOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(7, oneWayOffset, 0);
+}
+
+static createOneWayVector(builder:flatbuffers.Builder, data:boolean[]):flatbuffers.Offset {
+  builder.startVector(1, data.length, 1);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addInt8(+data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startOneWayVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(1, numElems, 1);
+}
+
+static addWay(builder:flatbuffers.Builder, wayOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(8, wayOffset, 0);
+}
+
+static createWayVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
+  builder.startVector(4, data.length, 4);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addOffset(data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startWayVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(4, numElems, 4);
+}
+
 static addTags(builder:flatbuffers.Builder, tagsOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(6, tagsOffset, 0);
+  builder.addFieldOffset(9, tagsOffset, 0);
 }
 
 static endOsmNode(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -207,14 +302,17 @@ static endOsmNode(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createOsmNode(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset, pointsToOffset:flatbuffers.Offset, highwayOffset:flatbuffers.Offset, polylineOffset:flatbuffers.Offset, distanceOffset:flatbuffers.Offset, travelTimeOffset:flatbuffers.Offset, tagsOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createOsmNode(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset, pointsToOffset:flatbuffers.Offset, highwayOffset:flatbuffers.Offset, polylineOffset:flatbuffers.Offset, distanceOffset:flatbuffers.Offset, speedOffset:flatbuffers.Offset, travelTimeOffset:flatbuffers.Offset, oneWayOffset:flatbuffers.Offset, wayOffset:flatbuffers.Offset, tagsOffset:flatbuffers.Offset):flatbuffers.Offset {
   OsmNode.startOsmNode(builder);
   OsmNode.addId(builder, idOffset);
   OsmNode.addPointsTo(builder, pointsToOffset);
   OsmNode.addHighway(builder, highwayOffset);
   OsmNode.addPolyline(builder, polylineOffset);
   OsmNode.addDistance(builder, distanceOffset);
+  OsmNode.addSpeed(builder, speedOffset);
   OsmNode.addTravelTime(builder, travelTimeOffset);
+  OsmNode.addOneWay(builder, oneWayOffset);
+  OsmNode.addWay(builder, wayOffset);
   OsmNode.addTags(builder, tagsOffset);
   return OsmNode.endOsmNode(builder);
 }

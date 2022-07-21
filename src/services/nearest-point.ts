@@ -22,6 +22,8 @@ export interface ClosestPoint {
   highway: string;
   speed: number;
   way: IOsmWay | undefined;
+  wayId: string;
+  oneWay: boolean;
 }
 
 export const getNearestPoint = async (
@@ -74,6 +76,8 @@ export const getNearestPoint = async (
     speed: 0,
     polyline: [],
     way: undefined,
+    wayId: "",
+    oneWay: false,
   };
 
   const mergedEdges = ([] as IOsmNode[]).concat.apply([], allEdges).map(node => {
@@ -99,6 +103,8 @@ export const getNearestPoint = async (
           closestPoint.highway = pointsToNode.highway;
           closestPoint.speed = pointsToNode.speed as number;
           closestPoint.way = pointsToNode.way;
+          closestPoint.wayId = pointsToNode.wayId as string;
+          closestPoint.oneWay = pointsToNode.oneWay as boolean;
 
           const geohash = ngeohash.encode(calculation.point.lat, calculation.point.lon, precision);
           closestPoint.id = geohash;
@@ -147,10 +153,10 @@ export const getNearestPoint = async (
             closestPoint.pointsToNode.push(node);
           }
 
-          const insideIndex = allClosestPoints.findIndex(cp => cp.way?.id === pointsToNode.way.id);
+          const insideIndex = allClosestPoints.findIndex(cp => cp.wayId === pointsToNode.wayId);
           const inside = allClosestPoints[insideIndex];
           if (insideIndex >= 0) {
-            if (inside.way?.id === closestPoint.way.id && inside.distance > closestPoint.distance) {
+            if (inside.wayId === closestPoint.wayId && inside.distance > closestPoint.distance) {
               allClosestPoints.splice(insideIndex, 1)
               allClosestPoints.unshift({ ...closestPoint });
             }

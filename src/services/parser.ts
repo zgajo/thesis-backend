@@ -232,6 +232,8 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           polyline: JSON.stringify(polyline),
           travelTime,
           speed,
+          wayId:way.id,
+          oneWay: isOneWay
         };
 
         this.simplifyNodesConnector(startingCalculationNode, nextNode, newConnection, isOneWay);

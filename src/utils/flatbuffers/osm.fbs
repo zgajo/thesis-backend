@@ -20,7 +20,10 @@ table OsmNode {
   // Maybe try using struct of doubles instead of string for polyline
   polyline: [string];
   distance: [double];
+  speed: [short];
   travel_time: [double];
+  one_way: [bool]; 
+  way: [string];
   tags: string;
 }
 

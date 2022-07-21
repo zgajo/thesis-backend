@@ -53,6 +53,8 @@ server.get(
         speed: 0,
         polyline: [],
         way: undefined,
+        oneWay: false,
+        wayId: "",
       },
       mergedEdges: unknown,
       proximityBounds: unknown,

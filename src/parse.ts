@@ -8,7 +8,7 @@ import { COUNTRY } from "./utils/constants";
 
 export const parserService = new Parser()
 console.time("nodesImport")
-
+let wayId = 1
 parse({
   filePath: path.join(__dirname, `${COUNTRY}-latest.osm.pbf`),
   endDocument: function () {
@@ -58,7 +58,9 @@ parse({
     parserService.handleNode(node)
   },
   way: function(way: any){
+    way.id = `AN${wayId}`
     parserService.handleWay(way) 
+    wayId+=1
   },
   relation: function (relation: any) {
     // relation.nodeRefs = relation.members.map((member: { ref: any; }) => member.ref)

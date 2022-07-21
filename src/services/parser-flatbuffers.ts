@@ -108,6 +108,9 @@ export class FlatbufferHelper {
       let distances: number[] = []
       let travel_times: number[] = []
       let pointsTo: number[] = [];
+      let speed: number[] = [];
+      let wayId: number[] = [];
+      let oneWays: boolean[] = [];
       
       if("pointsToNodeSimplified" in node) {
         node.pointsToNodeSimplified?.forEach(node => {
@@ -116,15 +119,22 @@ export class FlatbufferHelper {
           if(node.node.geohash) pointsTo.push( builder.createString(node.node.geohash))
           if(node.polyline) polylines.push( builder.createString(node.polyline))
           distances.push( node.distance)
+          if(node.speed) speed.push(node.speed)
           if(node.travelTime) travel_times.push( node.travelTime)
+          if(node.wayId) wayId.push(builder.createString(node.wayId))
+          
+          if(node.oneWay !== undefined && node.oneWay !== null) oneWays.push(node.oneWay)
         })
       }
       
       const vectorHighways = highways.length ? OSM.OsmNode.createHighwayVector(builder, highways) : null
       const vectorPolylines = polylines.length ? OSM.OsmNode.createPolylineVector(builder, polylines) : null
       const vectorDistances = distances.length ? OSM.OsmNode.createHighwayVector(builder, distances) : null
+      const vectorSpeeds = speed.length ? OSM.OsmNode.createHighwayVector(builder, speed) : null
       const vectorTravelTimes = travel_times.length ? OSM.OsmNode.createHighwayVector(builder, travel_times) : null
       const vectorPointsTo = pointsTo.length ? OSM.OsmNode.createPointsToVector(builder, pointsTo) : null
+      const vectorWayIds = wayId.length ? OSM.OsmNode.createWayVector(builder, wayId) : null
+      const vectorOneWay = oneWays.length ? OSM.OsmNode.createOneWayVector(builder, oneWays) : null
       
       // Use tags only if not highway
       let tags
@@ -139,6 +149,9 @@ export class FlatbufferHelper {
       if(vectorDistances) OSM.OsmNode.addDistance(builder, vectorDistances);
       if(vectorTravelTimes) OSM.OsmNode.addTravelTime(builder, vectorTravelTimes);
       if(vectorPointsTo) OSM.OsmNode.addPointsTo(builder, vectorPointsTo);
+      if(vectorSpeeds) OSM.OsmNode.addSpeed(builder, vectorSpeeds);
+      if(vectorWayIds) OSM.OsmNode.addWay(builder, vectorWayIds);
+      if(vectorOneWay) OSM.OsmNode.addOneWay(builder, vectorOneWay);
       if(!("pointsToNodeSimplified" in node) && tags) {
         OSM.OsmNode.addTags(builder, tags)
       };

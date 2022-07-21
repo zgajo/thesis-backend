@@ -22,6 +22,8 @@ export type TPointsToNode = {
   highway: TPointsToNodeHighway,
   distance: TPointsToNodeDistance,
   way: IOsmWay,
+  oneWay?: boolean,
+  wayId?: string,
   polyline?: TPointsToNodePolyline,
   travelTime?: number,
   speed?: number,

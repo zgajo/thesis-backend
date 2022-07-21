@@ -46,6 +46,7 @@
         <div>location: ${startingPoint}</div>
         <div>distance (km): ${current.distance/1000}</div>
         <div>travel time (minutes): ${Math.round(current.travelTime/60)}</div>
+        <div>travel time (seconds): ${Math.round(current.travelTime)}</div>
         `, {permanent: true }).openPopup();
         startMarker.addTo(map);
       }
