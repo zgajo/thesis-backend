@@ -5,6 +5,7 @@ import { IOsmNode, IOsmWay } from "../types/osm-read";
 import { COUNTRY } from "../utils/constants";
 import * as OSM from "../utils/flatbuffers/osm";
 import { DataTable } from "../utils/flatbuffers/osm/parser/data-table";
+import { createTags } from '../utils/tags';
 import { Parser } from './parser';
 
 let builder = new flatbuffers.Builder(1024);
@@ -139,7 +140,10 @@ export class FlatbufferHelper {
       // Use tags only if not highway
       let tags
       if(!("pointsToNodeSimplified" in node)) {
-        tags =builder.createString(JSON.stringify(node.tags))
+        const newTags = createTags(node.tags)
+        if(newTags){
+          tags = builder.createString(JSON.stringify(newTags))
+        }
       };
 
       OSM.OsmNode.startOsmNode(builder);
