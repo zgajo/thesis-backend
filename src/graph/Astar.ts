@@ -1,5 +1,5 @@
-import FastPriorityQueue from "fastpriorityqueue";
-import { isForBike, isForDriving, isForWalking } from '../services/parser-helper';
+import ngeohash from 'ngeohash'
+import { isForBike, isForDriving, isForWalking } from "../services/parser-helper";
 import { IOsmNode, TPointsToNode } from "../types/osm-read";
 import { calculateTravelTime, greatCircleVec } from "../utils/distance";
 import { getPenaltyTransition } from "../utils/routing";
@@ -23,7 +23,7 @@ const diagonal = function (pos0: IOsmNode, pos1: IOsmNode) {
   return D * (d1 + d2) + (D2 - 2 * D) * Math.min(d1, d2);
 };
 
-type Position = {lat: number, lon: number}
+type Position = { lat: number; lon: number };
 // https://www.movable-type.co.uk/scripts/latlong.html
 export const haversine = (a: IOsmNode | Position, b: IOsmNode | Position) => {
   const R = 6371e3; // metres
@@ -71,11 +71,11 @@ export class AStar {
   private disabledEdges: Map<string, boolean>;
   constructor(avgSpeed: number) {
     this.avgSpeed = avgSpeed;
-    this.disabledEdges = new Map()
+    this.disabledEdges = new Map();
   }
 
-  addDisabledEdge(from: string, to: string){
-    this.disabledEdges.set(`${from}-${to}`, true)
+  addDisabledEdge(from: string, to: string) {
+    this.disabledEdges.set(`${from}-${to}`, true);
   }
 
   search(start: IOsmNode, end: IOsmNode) {
@@ -92,20 +92,20 @@ export class AStar {
         }
       }
       let current = openSet[lowestIndex];
-  
+
       if (current.node.geohash === end.geohash) {
         let temp = current;
         path.push(temp);
-        let route: [number, number][][] = []
-        let distance = 0
-        let travelTime = 0
+        let route: [number, number][][] = [];
+        let distance = 0;
+        let travelTime = 0;
         while (temp.previous) {
           path.push(temp.previous);
-          if(temp.polyline){
-            route.push(temp.polyline)
+          if (temp.polyline) {
+            route.push(temp.polyline);
           }
-          travelTime += temp.travelTime
-          distance += temp.distance
+          travelTime += temp.travelTime;
+          distance += temp.distance;
           temp = temp.previous;
         }
         console.log("DONE!");
@@ -116,55 +116,70 @@ export class AStar {
           route,
           current,
           distance,
-          travelTime
+          travelTime,
         };
       }
-  
+
       //remove current from openSet
       openSet.splice(lowestIndex, 1);
       //add current to closedSet
       closedSet.push(current);
-  
+
       let neighbors = current.node.pointsToNodeSimplified;
 
-      if(!neighbors) break;
+      if (!neighbors) break;
 
       for (let i = 0; i < neighbors.length; i++) {
-        const connection = neighbors[i]
+        const connection = neighbors[i];
 
         let neighbor = new SearchNode(neighbors[i].node);
-  
+
         if (!closedSet.find(n => n.node.id === connection.nodeId)) {
           let penalty = 0;
-          if(current.highway){
-            penalty = getPenaltyTransition(current.highway, connection.highway)
+          if (current.highway) {
+            penalty = getPenaltyTransition(current.highway, connection.highway);
           }
           let possibleG = current.gScore + (connection.travelTime as number) + penalty;
-  
-          const neighbourghInOpenSet = openSet.find(n => n.node.id === connection.nodeId)
-          if(neighbourghInOpenSet) neighbor = neighbourghInOpenSet
+
+          const neighbourghInOpenSet = openSet.find(n => n.node.id === connection.nodeId);
+          if (neighbourghInOpenSet) neighbor = neighbourghInOpenSet;
           if (!neighbourghInOpenSet) {
             openSet.push(neighbor);
           } else if (possibleG >= neighbor.gScore) {
             continue;
           }
-  
-          const heuristicNeighbourghToEnd = greatCircleVec(neighbor.node.lat, neighbor.node.lon, end.lat, end.lon)
+
+          const heuristicNeighbourghToEnd = greatCircleVec(neighbor.node.lat, neighbor.node.lon, end.lat, end.lon);
           neighbor.gScore = possibleG;
           neighbor.hScore = calculateTravelTime(this.avgSpeed, heuristicNeighbourghToEnd);
           neighbor.fScore = neighbor.gScore + neighbor.hScore;
           neighbor.previous = current;
-          neighbor.polyline = connection.polyline ? JSON.parse(connection.polyline) : [];
+
+          if(connection.polyline){
+            let tempPolyline = JSON.parse(connection.polyline)
+
+            if(typeof tempPolyline[0] === "string"){
+              tempPolyline = tempPolyline.map((hash: string) => {
+                const point = ngeohash.decode(hash);
+
+                return [point.latitude, point.longitude];
+              })
+            }
+
+            neighbor.polyline = tempPolyline
+          }else {
+            neighbor.polyline =[] 
+          }
+           
           neighbor.highway = connection.highway;
-          neighbor.distance = connection.distance as number
-          neighbor.travelTime = connection.travelTime as number
+          neighbor.distance = connection.distance as number;
+          neighbor.travelTime = connection.travelTime as number;
         }
       }
+    }
 
-    }
-    
     return {
-      route: []
-    }
+      route: [],
+    };
   }
 }

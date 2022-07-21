@@ -170,7 +170,8 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           let distance = 0;
 
           if (!startingCalculationNode) throw new Error(`startingCalculationNode: ${startingCalculationNode} not found in highway nodes`);
-          let polyline = `[${startingCalculationNode.lat}, ${startingCalculationNode.lon}], `;
+          const startingCalculationNodeGeohash = geohash.encode(startingCalculationNode.lat, startingCalculationNode.lon, GEOHASH_PRECISION)
+          let polyline: string[] = [startingCalculationNodeGeohash];
 
           for (let i = 1; i <= lastIndex; i++) {
             const previousNode = this.nodes.highway.get(way.nodeRefs[i - 1]);
@@ -206,10 +207,11 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
       distance: number,
       startingCalculationNode: IOsmNode,
       isOneWay: boolean,
-      polyline: string,
+      polyline: string[],
     ) {
       const holdNode = (nextNode.linkCount && nextNode.linkCount > 1) || lastIndex;
-      polyline = polyline + `[${nextNode.lat}, ${nextNode.lon}]${holdNode ? "" : ", "}`;
+      const nextNodeGeohahs = geohash.encode(nextNode.lat, nextNode.lon)
+      polyline.push(nextNodeGeohahs);
       distance += haversine(previousNode, nextNode);
 
       if (!previousNode.pointsToNode) return;
@@ -219,8 +221,6 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
 
       // we've hit the node that needs to be stored
       if (holdNode) {
-        polyline = `[${polyline}]`;
-
         const { travelTime, speed } = this.calculateTravelTime(way, distance);
 
         const newConnection: TPointsToNode = {
@@ -229,7 +229,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
           highway: way.tags?.highway || "",
           distance,
           way,
-          polyline,
+          polyline: JSON.stringify(polyline),
           travelTime,
           speed,
         };
@@ -248,7 +248,7 @@ function WayParser<TBase extends new (...args: any[]) => IOsmParsed>(Base: TBase
         }
 
         startingCalculationNode = nextNode;
-        polyline = `[${startingCalculationNode.lat}, ${startingCalculationNode.lon}], `;
+        polyline = [nextNode.geohash];
         distance = 0;
       }
       return {

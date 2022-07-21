@@ -80,7 +80,11 @@ export const getNearestPoint = async (
     let polylines: [number, number][][] = [];
 
     node.pointsToNodeSimplified?.forEach(pointsToNode => {
-      const edges: [number, number][] = JSON.parse(pointsToNode.polyline || "");
+      const edges: [number, number][] = JSON.parse(pointsToNode.polyline || "").map((hash: string) => {
+        const point = ngeohash.decode(hash)
+
+        return [point.latitude, point.longitude]
+      });
 
       for (let i = 1; i < edges.length; i++) {
         const x = { lat: edges[i - 1][0], lon: edges[i - 1][1] };
